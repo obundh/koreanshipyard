@@ -828,12 +828,15 @@ a {
 }
 
 .process-step-body {
-  min-height: 5.2rem;
+  min-height: 4.6rem;
   border-radius: var(--radius-md);
   border: 1px solid rgba(17, 69, 145, 0.2);
+  border-left: 4px solid rgba(29, 87, 184, 0.58);
   background: rgba(255, 255, 255, 0.97);
   box-shadow: 0 14px 24px rgba(12, 37, 76, 0.12);
-  padding: 0.82rem 0.92rem 0.88rem;
+  padding: 0.9rem 1rem;
+  display: flex;
+  align-items: center;
 }
 
 .process-phase {
@@ -848,10 +851,10 @@ a {
 
 .process-step-body h3 {
   margin: 0;
-  margin-top: 0.28rem;
   color: var(--navy);
-  font-size: 1.14rem;
-  line-height: 1.32;
+  font-size: 1.12rem;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
 }
 
 .phase-prep .process-order {
@@ -1555,8 +1558,8 @@ a {
   }
 
   .process-step-body {
-    min-height: 4.2rem;
-    padding: 0.7rem 0.7rem 0.74rem;
+    min-height: 3.8rem;
+    padding: 0.62rem 0.72rem 0.64rem;
   }
 
   .process-phase {
@@ -1564,8 +1567,8 @@ a {
   }
 
   .process-step-body h3 {
-    margin-top: 0.2rem;
-    font-size: 0.94rem;
+    font-size: 0.98rem;
+    line-height: 1.35;
   }
 
   .product-card img {
