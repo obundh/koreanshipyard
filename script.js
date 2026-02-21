@@ -1,26 +1,20 @@
 const heroProducts = [
   {
-    title: "고속 알루미늄 작업선",
-    description: "항만 지원과 해상 작업에 최적화된 경량 선체로 기동성과 연료 효율을 동시에 확보합니다.",
-    meta: "용도: 항만 지원 / 근해 작업",
+    title: "낚시선 생산 라인",
+    description: "3톤부터 9.77톤급까지 현장 요구에 맞춘 낚시선을 안정적으로 제작합니다.",
+    meta: "선급: 3톤 ~ 9.77톤급",
     image: "sample-image-1.png",
   },
   {
-    title: "고출력 항만 예인선",
-    description: "협수로 조종 성능과 선회 안정성을 강화해 항만 입출항 지원 작업에 대응합니다.",
-    meta: "용도: 예인 / 부두 지원",
+    title: "어선 생산 라인",
+    description: "3톤부터 50톤급까지 각 톤급별 몰드를 보유해 생산 대응이 가능합니다.",
+    meta: "선급: 3톤 ~ 50톤급 (각 톤급별 몰드 보유)",
     image: "sample-image-1.png",
   },
   {
-    title: "대형 산업용 바지선",
-    description: "플랫 데크와 보강 구조를 적용해 해상 구조물, 중량 화물 이송 프로젝트를 안정적으로 수행합니다.",
-    meta: "용도: 화물 운송 / 해양 플랜트 지원",
-    image: "sample-image-1.png",
-  },
-  {
-    title: "연안 경비 순찰정",
-    description: "파고 대응력을 높인 선체와 고속 추진 구성을 통해 신속한 연안 임무 수행이 가능합니다.",
-    meta: "용도: 감시 / 구조 / 순찰",
+    title: "기타선박(통선) 생산 라인",
+    description: "7.93톤부터 9.77톤급 통선 생산 기준에 맞춰 품질과 납기를 관리합니다.",
+    meta: "선급: 7.93톤 ~ 9.77톤급",
     image: "sample-image-1.png",
   },
 ];
@@ -49,7 +43,7 @@ function renderHero(index) {
   activeHeroIndex = safeIndex;
 
   heroStage.style.backgroundImage =
-    `linear-gradient(120deg, rgba(5, 20, 34, 0.7), rgba(8, 28, 45, 0.35) 45%, rgba(9, 45, 64, 0.7)), url("${product.image}")`;
+    `linear-gradient(120deg, rgba(8, 24, 54, 0.74), rgba(20, 53, 108, 0.42) 45%, rgba(11, 33, 70, 0.78)), url("${product.image}")`;
   heroTitle.textContent = product.title;
   heroDesc.textContent = product.description;
   heroMeta.textContent = product.meta;
