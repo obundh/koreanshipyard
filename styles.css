@@ -87,16 +87,16 @@ a {
 }
 
 .brand-name {
-  font-size: 0.9rem;
-  font-weight: 700;
+  font-size: 1.23rem;
+  font-weight: 600;
   letter-spacing: 0.015em;
   color: #d7e9ff;
-  background: linear-gradient(180deg, #f4f9ff 0%, #bcdcff 56%, #8cbcff 100%);
+  background: linear-gradient(180deg, #f4f9ff 0%, #bcdcff 56%, #085ed6 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
   line-height: 1;
-  margin-top: -0.58rem;
+  margin-top: -0.88rem;
   text-shadow: 0 6px 14px rgba(5, 20, 45, 0.4);
   white-space: nowrap;
 }
@@ -745,7 +745,7 @@ a {
   }
 
   .brand-name {
-    font-size: 0.78rem;
+    font-size: 0.9rem;
     margin-top: -0.46rem;
   }
 
