@@ -700,6 +700,69 @@ a {
   font-size: 0.92rem;
 }
 
+.process-panel {
+  position: relative;
+  border: 1px solid rgba(16, 63, 132, 0.16);
+  border-radius: 2rem;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.9), rgba(226, 239, 255, 0.93));
+  padding: 4.1rem clamp(1rem, 3vw, 2.4rem);
+}
+
+.process-grid {
+  list-style: none;
+  margin: 1.8rem 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.9rem;
+}
+
+.process-card {
+  position: relative;
+  min-height: 6.8rem;
+  border: 1px solid rgba(17, 69, 145, 0.2);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.97);
+  box-shadow: 0 14px 24px rgba(12, 37, 76, 0.12);
+  padding: 0.95rem 0.9rem 0.9rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 0.62rem;
+}
+
+.process-card::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 3px;
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  background: linear-gradient(90deg, #2e7de3, #6db3ff);
+}
+
+.process-order {
+  display: inline-grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.65rem;
+  font-family: "Barlow Condensed", sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #f7fbff;
+  background: linear-gradient(145deg, #1d57b8, #0050b8);
+  box-shadow: 0 8px 14px rgba(0, 80, 176, 0.22);
+}
+
+.process-card h3 {
+  margin: 0;
+  color: var(--navy);
+  font-size: 1.05rem;
+  line-height: 1.35;
+}
+
 .history-panel {
   position: relative;
   margin-top: 0.8rem;
@@ -1095,6 +1158,10 @@ a {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .process-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
   .location-info-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -1189,6 +1256,32 @@ a {
   .metric-row,
   .location-info-grid {
     grid-template-columns: 1fr;
+  }
+
+  .process-panel {
+    padding: 3.1rem 1rem 2.8rem;
+    border-radius: 1.5rem;
+  }
+
+  .process-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.72rem;
+    margin-top: 1.3rem;
+  }
+
+  .process-card {
+    min-height: 5.7rem;
+    padding: 0.82rem 0.76rem 0.78rem;
+  }
+
+  .process-order {
+    width: 1.8rem;
+    height: 1.8rem;
+    font-size: 0.86rem;
+  }
+
+  .process-card h3 {
+    font-size: 0.94rem;
   }
 
   .product-card img {
