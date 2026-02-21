@@ -94,3 +94,113 @@ if (prefersReducedMotion) {
 
   revealTargets.forEach((node) => revealObserver.observe(node));
 }
+
+function loadNaverMapsSdk(clientId) {
+  if (window.naver?.maps) {
+    return Promise.resolve();
+  }
+
+  const scriptId = "naver-maps-sdk";
+  const existingScript = document.getElementById(scriptId);
+
+  if (existingScript) {
+    return new Promise((resolve, reject) => {
+      existingScript.addEventListener("load", () => resolve(), { once: true });
+      existingScript.addEventListener("error", () => reject(new Error("SDK_LOAD_FAILED")), { once: true });
+    });
+  }
+
+  return new Promise((resolve, reject) => {
+    const sdk = document.createElement("script");
+    sdk.id = scriptId;
+    sdk.async = true;
+    sdk.src = `https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=${encodeURIComponent(clientId)}`;
+    sdk.addEventListener("load", () => resolve(), { once: true });
+    sdk.addEventListener("error", () => reject(new Error("SDK_LOAD_FAILED")), { once: true });
+    document.head.appendChild(sdk);
+  });
+}
+
+async function initLocationMap() {
+  const mapElement = document.querySelector("#naver-map");
+  if (!mapElement) {
+    return;
+  }
+
+  mapElement.textContent = "지도를 불러오는 중입니다...";
+
+  try {
+    const response = await fetch("/api/naver-map-data", {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      let reason = `MAP_DATA_FAILED_${response.status}`;
+      try {
+        const errorBody = await response.json();
+        if (typeof errorBody?.message === "string" && errorBody.message.trim()) {
+          reason = errorBody.message;
+        }
+      } catch (_) {
+        // Ignore response body parse errors.
+      }
+      throw new Error(reason);
+    }
+
+    const mapData = await response.json();
+
+    if (!mapData?.clientId || !mapData?.center) {
+      throw new Error("INVALID_MAP_DATA");
+    }
+
+    if (typeof mapData.message === "string" && mapData.message.trim()) {
+      console.warn("[map]", mapData.message);
+    }
+
+    await loadNaverMapsSdk(mapData.clientId);
+
+    if (!window.naver?.maps) {
+      throw new Error("SDK_NOT_READY");
+    }
+
+    mapElement.textContent = "";
+    mapElement.classList.add("is-ready");
+
+    const center = new window.naver.maps.LatLng(mapData.center.lat, mapData.center.lng);
+    const map = new window.naver.maps.Map(mapElement, {
+      center,
+      zoom: 14,
+      zoomControl: true,
+      zoomControlOptions: {
+        position: window.naver.maps.Position.TOP_RIGHT,
+      },
+    });
+
+    new window.naver.maps.Marker({
+      position: center,
+      map,
+      title: "한국마린조선",
+    });
+  } catch (error) {
+    console.error(error);
+    mapElement.classList.remove("is-ready");
+    const detail = String(error?.message || "");
+
+    if (detail.includes("404")) {
+      mapElement.textContent = "지도 API 경로(/api/naver-map-data)를 찾지 못했습니다. Vercel 배포 환경에서 확인해 주세요.";
+      return;
+    }
+
+    if (detail.includes("SDK_LOAD_FAILED") || detail.includes("SDK_NOT_READY")) {
+      mapElement.textContent = "네이버 지도 SDK 로드에 실패했습니다. 콘솔의 도메인 허용(URL) 설정을 확인해 주세요.";
+      return;
+    }
+
+    mapElement.textContent = "지도를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.";
+  }
+}
+
+initLocationMap();

@@ -1046,6 +1046,12 @@ a {
   color: var(--ink-soft);
 }
 
+.map-box.is-ready {
+  display: block;
+  padding: 0;
+  overflow: hidden;
+}
+
 .reveal,
 .reveal-item {
   opacity: 0;
