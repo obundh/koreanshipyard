@@ -32,7 +32,6 @@ const hasHero =
   heroMeta &&
   heroTabs.length === heroProducts.length;
 let activeHeroIndex = 0;
-let heroRotationTimer = null;
 
 function renderHero(index) {
   if (!hasHero) {
@@ -55,30 +54,15 @@ function renderHero(index) {
   });
 }
 
-function setHeroRotation() {
-  if (!hasHero) {
-    return;
-  }
-  if (prefersReducedMotion || heroProducts.length <= 1) {
-    return;
-  }
-  clearInterval(heroRotationTimer);
-  heroRotationTimer = setInterval(() => {
-    renderHero(activeHeroIndex + 1);
-  }, 5200);
-}
-
 if (hasHero) {
   heroTabs.forEach((tab) => {
     tab.addEventListener("click", () => {
       const targetIndex = Number(tab.dataset.index ?? 0);
       renderHero(targetIndex);
-      setHeroRotation();
     });
   });
 
   renderHero(0);
-  setHeroRotation();
 }
 
 const revealTargets = document.querySelectorAll(".reveal, .reveal-item");
