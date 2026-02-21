@@ -568,6 +568,97 @@ a {
   font-size: 0.92rem;
 }
 
+.history-panel {
+  position: relative;
+  margin-top: 0.8rem;
+  border: 1px solid rgba(16, 63, 132, 0.16);
+  border-radius: 2rem;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.9), rgba(226, 239, 255, 0.93));
+  padding: 4.1rem clamp(1rem, 3vw, 2.4rem);
+  overflow: hidden;
+}
+
+.history-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 10% 10%, rgba(0, 80, 176, 0.12), transparent 40%),
+    radial-gradient(circle at 88% 78%, rgba(64, 144, 208, 0.14), transparent 42%);
+  pointer-events: none;
+}
+
+.history-panel .panel-head,
+.history-panel .history-timeline {
+  position: relative;
+  z-index: 1;
+}
+
+.history-panel .panel-copy {
+  margin-top: 0.72rem;
+  max-width: 54rem;
+  color: #355473;
+}
+
+.history-timeline {
+  margin-top: 2.15rem;
+  position: relative;
+}
+
+.history-timeline::before {
+  content: "";
+  position: absolute;
+  left: calc(50% - 1px);
+  top: 0.5rem;
+  bottom: 0.5rem;
+  width: 2px;
+  background: linear-gradient(
+    to bottom,
+    rgba(29, 87, 184, 0.16),
+    rgba(0, 80, 176, 0.58),
+    rgba(29, 87, 184, 0.16)
+  );
+}
+
+.history-item {
+  border: 1px solid rgba(16, 63, 132, 0.18);
+  background: rgba(255, 255, 255, 0.97);
+  box-shadow: 0 16px 28px rgba(10, 34, 71, 0.16);
+  padding: 1.1rem 1rem 1rem 4.9rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.history-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 34px rgba(10, 34, 71, 0.2);
+}
+
+.history-item .step {
+  left: 1.15rem;
+  top: 0.94rem;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  font-weight: 700;
+  background: linear-gradient(150deg, #1d57b8, #0050b8);
+  box-shadow: 0 8px 16px rgba(0, 80, 176, 0.32);
+}
+
+.history-item h3 {
+  font-size: 1.08rem;
+  letter-spacing: 0.01em;
+}
+
+.history-item p {
+  margin-top: 0.48rem;
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: #1a427d;
+}
+
 .panel-contact {
   padding-bottom: 5.4rem;
 }
@@ -710,6 +801,10 @@ a {
   .timeline {
     grid-template-columns: 1fr;
   }
+
+  .history-timeline::before {
+    left: 1.28rem;
+  }
 }
 
 @media (max-width: 1080px) {
@@ -791,6 +886,36 @@ a {
 
   .timeline-item {
     padding-left: 3.3rem;
+  }
+
+  .history-panel {
+    padding: 3.1rem 1rem 2.8rem;
+    border-radius: 1.5rem;
+  }
+
+  .history-panel .panel-copy {
+    font-size: 0.92rem;
+  }
+
+  .history-item {
+    padding: 1rem 0.92rem 0.92rem 4.45rem;
+  }
+
+  .history-item .step {
+    left: 1rem;
+    top: 0.9rem;
+    width: 2.65rem;
+    height: 2.65rem;
+    font-size: 0.66rem;
+    letter-spacing: 0.01em;
+  }
+
+  .history-item h3 {
+    font-size: 1rem;
+  }
+
+  .history-item p {
+    font-size: 0.92rem;
   }
 }
 
