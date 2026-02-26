@@ -1,5 +1,12 @@
 ﻿const heroProducts = [
   {
+    title: "FRP 선박 건조 및 수리",
+    description: "FRP 선박 건조 및 수리 작업을 현장 맞춤형으로 안정적으로 수행합니다.",
+    meta: "주요 업무: FRP 선박 건조 및 수리",
+    image: "shipphoto/낚시선_5.5t-6.67t_2.jpg",
+    position: "center 72%",
+  },
+  {
     title: "낚시선 생산 라인",
     description: "3톤부터 9.77톤급까지 현장 요구에 맞춘 낚시선을 안정적으로 제작합니다.",
     meta: "톤급: 3톤 ~ 9.77톤급",
@@ -312,3 +319,259 @@ function initProductImageLightbox() {
 }
 
 initProductImageLightbox();
+
+function formatBoardDate(value) {
+  if (!value) {
+    return "";
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  const hh = String(date.getHours()).padStart(2, "0");
+  const mm = String(date.getMinutes()).padStart(2, "0");
+  return `${y}.${m}.${d} ${hh}:${mm}`;
+}
+
+function createBoardItem(post) {
+  const item = document.createElement("li");
+  item.className = "board-post-item";
+
+  const top = document.createElement("div");
+  top.className = "board-post-top";
+
+  const title = document.createElement("p");
+  title.className = "board-post-title";
+  title.textContent = String(post?.title || "(제목 없음)");
+
+  const date = document.createElement("span");
+  date.className = "board-post-date";
+  date.textContent = formatBoardDate(post?.created_at);
+
+  const meta = document.createElement("p");
+  meta.className = "board-post-meta";
+  meta.textContent = post?.author ? `작성자: ${post.author}` : "작성자: 미기재";
+
+  const content = document.createElement("p");
+  content.className = "board-post-content";
+  content.textContent = String(post?.content || "");
+
+  top.appendChild(title);
+  top.appendChild(date);
+  item.appendChild(top);
+  item.appendChild(meta);
+  item.appendChild(content);
+
+  return item;
+}
+
+async function initBoard() {
+  const root = document.querySelector("[data-board-root]");
+  if (!root) {
+    return;
+  }
+
+  const postList = root.querySelector("#board-post-list");
+  const status = root.querySelector("#board-status");
+  const form = root.querySelector("#board-form");
+
+  if (!postList || !status || !form) {
+    return;
+  }
+  const endpointBase = "/api/board-posts";
+
+  function setStatus(message, mode = "normal") {
+    status.textContent = message;
+    status.classList.remove("is-error", "is-ok");
+    if (mode === "error") {
+      status.classList.add("is-error");
+    }
+    if (mode === "ok") {
+      status.classList.add("is-ok");
+    }
+  }
+
+  function renderEmpty(message) {
+    postList.innerHTML = "";
+    const empty = document.createElement("li");
+    empty.className = "board-empty";
+    empty.textContent = message;
+    postList.appendChild(empty);
+  }
+
+  async function loadPosts() {
+    try {
+      setStatus("게시글을 불러오는 중입니다...");
+      const response = await fetch(`${endpointBase}?limit=20`, {
+        method: "GET",
+      });
+
+      if (!response.ok) {
+        throw new Error(`LOAD_FAILED_${response.status}`);
+      }
+
+      const posts = await response.json();
+      postList.innerHTML = "";
+
+      if (!Array.isArray(posts) || !posts.length) {
+        renderEmpty("등록된 게시글이 없습니다.");
+        setStatus("게시글 0건", "ok");
+        return;
+      }
+
+      posts.forEach((post) => {
+        postList.appendChild(createBoardItem(post));
+      });
+
+      setStatus(`게시글 ${posts.length}건`, "ok");
+    } catch (error) {
+      console.error(error);
+      renderEmpty("게시글을 불러오지 못했습니다.");
+      setStatus("불러오기 실패: 서버 API(/api/board-posts) 설정을 확인해 주세요.", "error");
+    }
+  }
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const formData = new FormData(form);
+    const author = String(formData.get("author") || "").trim();
+    const title = String(formData.get("title") || "").trim();
+    const content = String(formData.get("content") || "").trim();
+
+    if (!title || !content) {
+      setStatus("제목/내용은 필수 입력입니다.", "error");
+      return;
+    }
+
+    try {
+      setStatus("게시글 저장 중...");
+      const payload = {
+        author,
+        title,
+        content,
+      };
+
+      const response = await fetch(endpointBase, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error(`SAVE_FAILED_${response.status}`);
+      }
+
+      form.reset();
+      setStatus("게시글이 등록되었습니다.", "ok");
+      await loadPosts();
+    } catch (error) {
+      console.error(error);
+      setStatus("등록 실패: 서버 API(/api/board-posts) 설정을 확인해 주세요.", "error");
+    }
+  });
+
+  await loadPosts();
+}
+
+initBoard();
+
+function createBoardPreviewItem(post) {
+  const item = document.createElement("li");
+  item.className = "board-post-item";
+
+  const top = document.createElement("div");
+  top.className = "board-post-top";
+
+  const title = document.createElement("p");
+  title.className = "board-post-title";
+  title.textContent = String(post?.title || "(제목 없음)");
+
+  const date = document.createElement("span");
+  date.className = "board-post-date";
+  date.textContent = formatBoardDate(post?.created_at);
+
+  const content = document.createElement("p");
+  content.className = "board-post-content";
+  content.textContent = String(post?.content || "");
+
+  top.appendChild(title);
+  top.appendChild(date);
+  item.appendChild(top);
+  item.appendChild(content);
+
+  return item;
+}
+
+async function initBoardPreview() {
+  const root = document.querySelector("[data-board-preview-root]");
+  if (!root) {
+    return;
+  }
+
+  const postList = root.querySelector("#board-preview-list");
+  const status = root.querySelector("#board-preview-status");
+
+  if (!postList || !status) {
+    return;
+  }
+  const endpointBase = "/api/board-posts";
+
+  function setStatus(message, mode = "normal") {
+    status.textContent = message;
+    status.classList.remove("is-error", "is-ok");
+    if (mode === "error") {
+      status.classList.add("is-error");
+    }
+    if (mode === "ok") {
+      status.classList.add("is-ok");
+    }
+  }
+
+  function renderEmpty(message) {
+    postList.innerHTML = "";
+    const empty = document.createElement("li");
+    empty.className = "board-empty";
+    empty.textContent = message;
+    postList.appendChild(empty);
+  }
+
+  try {
+    setStatus("최근 공지를 불러오는 중입니다...");
+    const response = await fetch(`${endpointBase}?limit=3`, {
+      method: "GET",
+    });
+
+    if (!response.ok) {
+      throw new Error(`PREVIEW_LOAD_FAILED_${response.status}`);
+    }
+
+    const posts = await response.json();
+    postList.innerHTML = "";
+
+    if (!Array.isArray(posts) || !posts.length) {
+      renderEmpty("등록된 공지사항이 없습니다.");
+      setStatus("최근 공지 0건", "ok");
+      return;
+    }
+
+    posts.forEach((post) => {
+      postList.appendChild(createBoardPreviewItem(post));
+    });
+    setStatus(`최근 공지 ${posts.length}건`, "ok");
+  } catch (error) {
+    console.error(error);
+    renderEmpty("공지사항을 불러오지 못했습니다.");
+    setStatus("불러오기 실패: 서버 API(/api/board-posts) 설정을 확인해 주세요.", "error");
+  }
+}
+
+initBoardPreview();
+

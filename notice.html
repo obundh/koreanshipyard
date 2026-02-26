@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>한국마린조선 | 공지사항</title>
+  <meta name="description" content="한국마린조선 공지사항 페이지입니다. 주요 공지와 운영 안내를 확인할 수 있습니다.">
+  <link rel="icon" type="image/png" href="logo1.png">
+  <link rel="shortcut icon" href="logo1.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="styles.css">
+  <script src="script.js" defer></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-frame">
+      <a href="index.html" class="brand" aria-label="한국마린조선 홈으로 이동">
+        <img class="brand-mark" src="logo1.png" alt="한국마린조선 로고">
+        <span class="brand-name">한국마린조선</span>
+      </a>
+      <nav class="main-nav" aria-label="주요 메뉴">
+        <a href="index.html"><span>01</span>홈</a>
+        <a href="about.html"><span>02</span>회사소개</a>
+        <a href="products.html"><span>03</span>생산 제품</a>
+        <a href="process.html"><span>04</span>공정 과정</a>
+        <a href="location.html"><span>05</span>찾아오시는 길</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="page-main">
+    <section class="page-hero reveal">
+      <p class="eyebrow">NOTICE</p>
+      <h1>공지사항</h1>
+      <p>생산 일정, 휴무, 운영 안내 등 주요 공지사항을 확인하실 수 있습니다.</p>
+    </section>
+
+    <nav class="page-subnav reveal" aria-label="공지사항 서브 메뉴">
+      <a href="#notice-board">공지 게시판</a>
+      <a href="#notice-guide">이용 안내</a>
+    </nav>
+
+    <section
+      id="notice-board"
+      class="panel panel-board"
+      data-board-root>
+      <div class="panel-head reveal">
+        <p class="eyebrow">NOTICE BOARD</p>
+        <h2>공지 게시판</h2>
+        <p class="panel-copy">공지사항은 시간순으로 제공되며, 저장 즉시 목록에 반영됩니다.</p>
+      </div>
+      <div class="board-layout">
+        <article class="board-card reveal-item">
+          <div class="board-card-head">
+            <h3>최근 공지</h3>
+            <p id="board-status" class="board-status">공지사항을 불러오는 중입니다...</p>
+          </div>
+          <ul id="board-post-list" class="board-post-list" aria-live="polite">
+            <li class="board-empty">공지사항이 없습니다.</li>
+          </ul>
+        </article>
+        <article class="board-card reveal-item">
+          <div class="board-card-head">
+            <h3>공지 등록</h3>
+            <p class="board-help">운영 담당자만 등록해 주세요.</p>
+          </div>
+          <form id="board-form" class="board-form">
+            <label for="board-author">작성자</label>
+            <input id="board-author" name="author" type="text" maxlength="30" placeholder="작성자명">
+
+            <label for="board-title">제목</label>
+            <input id="board-title" name="title" type="text" maxlength="120" required placeholder="공지 제목을 입력하세요">
+
+            <label for="board-content">내용</label>
+            <textarea id="board-content" name="content" rows="6" maxlength="2000" required placeholder="공지 내용을 입력하세요"></textarea>
+
+            <button class="btn btn-primary" type="submit">공지 등록</button>
+          </form>
+          <p class="board-config-guide">
+            운영 설정 위치: Vercel 프로젝트의 <code>Environment Variables</code>
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <section id="notice-guide" class="panel panel-alt">
+      <div class="panel-head reveal">
+        <p class="eyebrow">GUIDE</p>
+        <h2>공지사항 운영 안내</h2>
+        <p class="panel-copy">공지사항은 운영 담당자가 등록하며, 오래된 공지는 내부 정책에 따라 순차적으로 정리됩니다.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <section>
+        <p class="footer-name">한국마린조선</p>
+        <p><strong>사업자등록번호</strong> 417-09-80277</p>
+        <p><strong>대표자</strong> 명경은</p>
+      </section>
+      <section>
+        <p><strong>주소</strong> 전남 여수시 신월로 478-3</p>
+        <p><strong>[지번]</strong> 전남 여수시 신월동 216-8</p>
+        <p><strong>이메일</strong> <a href="mailto:hkmship@naver.com">hkmship@naver.com</a></p>
+      </section>
+      <section>
+        <p><strong>전화</strong> <a href="tel:0616425030">061-642-5030</a> / <a href="tel:0616425707">061-642-5707</a></p>
+        <p><strong>팩스</strong> 061-642-3253</p>
+        <nav class="footer-links" aria-label="푸터 메뉴">
+          <a href="index.html">홈</a>
+          <a href="about.html">회사소개</a>
+          <a href="products.html">생산 제품</a>
+          <a href="process.html">공정 과정</a>
+          <a class="footer-notice-link" href="notice.html">공지사항</a>
+          <a href="location.html">찾아오시는 길</a>
+        </nav>
+      </section>
+    </div>
+    <p class="footer-copy">© 한국마린조선. All rights reserved.</p>
+  </footer>
+</body>
+</html>
