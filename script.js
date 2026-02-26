@@ -3,13 +3,13 @@
     title: "낚시선 생산 라인",
     description: "3톤부터 9.77톤급까지 현장 요구에 맞춘 낚시선을 안정적으로 제작합니다.",
     meta: "톤급: 3톤 ~ 9.77톤급",
-    image: "sample-image-1.png",
+    image: "shipphoto/낚시선_4.99t-5.5t_1.jpg",
   },
   {
     title: "어선 생산 라인",
     description: "3톤부터 50톤급까지 각 톤급별 몰드를 보유해 안정적인 생산이 가능합니다.",
     meta: "톤급: 3톤 ~ 50톤급 (각 톤급별 몰드 보유)",
-    image: "sample-image-1.png",
+    image: "shipphoto/어선_7.31t-8.55t_1.jpg",
   },
   {
     title: "기타선박(통선) 생산 라인",
@@ -206,3 +206,96 @@ async function initLocationMap() {
 }
 
 initLocationMap();
+
+function initProductImageLightbox() {
+  const productImages = document.querySelectorAll(".product-card img");
+
+  if (!productImages.length) {
+    return;
+  }
+
+  const lightbox = document.createElement("div");
+  lightbox.className = "image-lightbox";
+  lightbox.setAttribute("aria-hidden", "true");
+  lightbox.innerHTML = `
+    <div class="image-lightbox-backdrop" data-close-lightbox="true"></div>
+    <figure class="image-lightbox-figure" role="dialog" aria-modal="true" aria-label="확대 이미지 보기">
+      <button type="button" class="image-lightbox-close" data-close-lightbox="true" aria-label="확대 이미지 닫기">&times;</button>
+      <img src="" alt="">
+      <figcaption></figcaption>
+    </figure>
+  `;
+
+  document.body.appendChild(lightbox);
+
+  const lightboxImage = lightbox.querySelector("img");
+  const lightboxCaption = lightbox.querySelector("figcaption");
+  let lastFocusedElement = null;
+
+  function closeLightbox() {
+    lightbox.classList.remove("is-open");
+    lightbox.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("lightbox-open");
+
+    if (lastFocusedElement instanceof HTMLElement) {
+      lastFocusedElement.focus();
+    }
+  }
+
+  function openLightbox(image) {
+    const src = image.getAttribute("src");
+    const alt = image.getAttribute("alt") || "제품 사진";
+
+    if (!src) {
+      return;
+    }
+
+    lastFocusedElement = document.activeElement;
+    lightboxImage.src = src;
+    lightboxImage.alt = alt;
+    lightboxCaption.textContent = alt;
+
+    lightbox.classList.add("is-open");
+    lightbox.setAttribute("aria-hidden", "false");
+    document.body.classList.add("lightbox-open");
+  }
+
+  productImages.forEach((image) => {
+    const alt = image.getAttribute("alt") || "제품 사진";
+    image.setAttribute("tabindex", "0");
+    image.setAttribute("role", "button");
+    image.setAttribute("aria-label", `${alt} 크게 보기`);
+
+    image.addEventListener("click", () => {
+      openLightbox(image);
+    });
+
+    image.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") {
+        return;
+      }
+
+      event.preventDefault();
+      openLightbox(image);
+    });
+  });
+
+  lightbox.addEventListener("click", (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) {
+      return;
+    }
+
+    if (target.dataset.closeLightbox === "true") {
+      closeLightbox();
+    }
+  });
+
+  window.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && lightbox.classList.contains("is-open")) {
+      closeLightbox();
+    }
+  });
+}
+
+initProductImageLightbox();
