@@ -81,23 +81,45 @@
       id="notice-preview"
       class="panel panel-notice-preview"
       data-board-preview-root>
-      <div class="panel-head reveal">
-        <p class="eyebrow">NOTICE</p>
-        <h2>공지사항</h2>
-        <p class="panel-copy">운영 공지와 일정 안내를 홈에서 바로 확인할 수 있습니다.</p>
+      <div class="home-split-grid">
+        <article class="notice-preview-card reveal-item">
+          <div class="panel-head">
+            <p class="eyebrow">NOTICE</p>
+            <h2>공지사항</h2>
+            <p class="panel-copy">제목을 클릭하면 해당 공지 상세로 이동합니다.</p>
+          </div>
+          <div class="notice-preview-head">
+            <h3>최근 공지</h3>
+            <p id="board-preview-status" class="board-status">공지사항을 불러오는 중입니다...</p>
+          </div>
+          <ul id="board-preview-list" class="board-post-list notice-preview-list" aria-live="polite">
+            <li class="board-empty">등록된 공지사항이 없습니다.</li>
+          </ul>
+          <div class="notice-preview-actions">
+            <a class="btn btn-primary" href="notice.html">공지사항 페이지 바로가기</a>
+          </div>
+        </article>
+
+        <article class="home-vessel-card reveal-item" data-home-vessel-slider>
+          <div class="panel-head">
+            <p class="eyebrow">FISHING VESSEL</p>
+            <h2>어선 대표 선급</h2>
+            <p class="panel-copy">생산 제품의 각 톤급 1번 사진 기준입니다.</p>
+          </div>
+          <div class="home-vessel-figure">
+            <img data-home-vessel-image src="" alt="어선 대표 이미지">
+          </div>
+          <div class="home-vessel-meta">
+            <p class="home-vessel-title" data-home-vessel-title>어선 4.99톤급</p>
+            <p class="home-vessel-tonnage" data-home-vessel-tonnage>톤급: 4.99톤급</p>
+          </div>
+          <div class="home-vessel-controls" aria-label="어선 이미지 슬라이드 제어">
+            <button type="button" class="home-vessel-nav" data-home-vessel-prev aria-label="이전 이미지">이전</button>
+            <p class="home-vessel-index"><span data-home-vessel-current>1</span> / <span data-home-vessel-total>1</span></p>
+            <button type="button" class="home-vessel-nav" data-home-vessel-next aria-label="다음 이미지">다음</button>
+          </div>
+        </article>
       </div>
-      <article class="notice-preview-card reveal-item">
-        <div class="notice-preview-head">
-          <h3>최근 공지</h3>
-          <p id="board-preview-status" class="board-status">공지사항을 불러오는 중입니다...</p>
-        </div>
-        <ul id="board-preview-list" class="board-post-list notice-preview-list" aria-live="polite">
-          <li class="board-empty">등록된 공지사항이 없습니다.</li>
-        </ul>
-        <div class="notice-preview-actions">
-          <a class="btn btn-primary" href="notice.html">공지사항 페이지 바로가기</a>
-        </div>
-      </article>
     </section>
   </main>
 

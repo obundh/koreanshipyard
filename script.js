@@ -33,6 +33,39 @@ const heroProducts = [
   },
 ];
 
+const homeFishingVesselSlides = [
+  {
+    title: "어선 4.99톤급",
+    tonnage: "4.99톤급",
+    image: "shipphoto/어선_4.99t_1.jpg",
+  },
+  {
+    title: "어선 6톤~6.77톤급",
+    tonnage: "6톤~6.77톤급",
+    image: "shipphoto/어선_6t-6.77t_1.jpg",
+  },
+  {
+    title: "어선 7.31톤~8.55톤급",
+    tonnage: "7.31톤~8.55톤급",
+    image: "shipphoto/어선_7.31t-8.55t_1.jpg",
+  },
+  {
+    title: "어선 8.55톤~9.16톤급",
+    tonnage: "8.55톤~9.16톤급",
+    image: "shipphoto/어선_8.55t-9.16t_1.jpg",
+  },
+  {
+    title: "어선 9.77톤급",
+    tonnage: "9.77톤급",
+    image: "shipphoto/어선_9.77t_1.jpg",
+  },
+  {
+    title: "어선 12톤~19톤급",
+    tonnage: "12톤~19톤급",
+    image: "shipphoto/어선_12t-19t_1.jpg",
+  },
+];
+
 const ADMIN_TOKEN_STORAGE_KEY = "kms_admin_access_token";
 const PUBLIC_CONFIG_ENDPOINT = "/api/public-config";
 const MAX_UPLOAD_BYTES = Math.floor(4.3 * 1024 * 1024);
@@ -98,6 +131,56 @@ if (hasHero) {
 
   renderHero(0);
 }
+
+function initHomeFishingVesselSlider() {
+  const sliderRoot = document.querySelector("[data-home-vessel-slider]");
+  if (!sliderRoot || !homeFishingVesselSlides.length) {
+    return;
+  }
+
+  const image = sliderRoot.querySelector("[data-home-vessel-image]");
+  const title = sliderRoot.querySelector("[data-home-vessel-title]");
+  const tonnage = sliderRoot.querySelector("[data-home-vessel-tonnage]");
+  const current = sliderRoot.querySelector("[data-home-vessel-current]");
+  const total = sliderRoot.querySelector("[data-home-vessel-total]");
+  const prevButton = sliderRoot.querySelector("[data-home-vessel-prev]");
+  const nextButton = sliderRoot.querySelector("[data-home-vessel-next]");
+
+  if (
+    !image ||
+    !title ||
+    !tonnage ||
+    !current ||
+    !total ||
+    !prevButton ||
+    !nextButton
+  ) {
+    return;
+  }
+
+  let activeIndex = 0;
+  total.textContent = String(homeFishingVesselSlides.length);
+
+  function renderSlide(index) {
+    const safeIndex =
+      (index + homeFishingVesselSlides.length) % homeFishingVesselSlides.length;
+    const slide = homeFishingVesselSlides[safeIndex];
+    activeIndex = safeIndex;
+
+    image.src = slide.image;
+    image.alt = `${slide.title} 이미지`;
+    title.textContent = slide.title;
+    tonnage.textContent = `톤급: ${slide.tonnage}`;
+    current.textContent = String(safeIndex + 1);
+  }
+
+  prevButton.addEventListener("click", () => renderSlide(activeIndex - 1));
+  nextButton.addEventListener("click", () => renderSlide(activeIndex + 1));
+
+  renderSlide(0);
+}
+
+initHomeFishingVesselSlider();
 
 const revealTargets = document.querySelectorAll(".reveal, .reveal-item");
 revealTargets.forEach((node, index) => {
@@ -400,6 +483,12 @@ function createBoardItem(post, options = {}) {
 
   const entry = document.createElement("details");
   entry.className = "board-post-entry";
+  const postId = String(post?.id ?? "").trim();
+  if (postId) {
+    item.dataset.postId = postId;
+    entry.dataset.postId = postId;
+    item.id = `notice-post-${postId}`;
+  }
 
   const summary = document.createElement("summary");
   summary.className = "board-post-summary";
@@ -490,6 +579,7 @@ async function initBoard() {
   }
 
   let canManage = Boolean(readAdminToken());
+  let postFromQueryHandled = false;
 
   function setStatus(message, mode = "normal") {
     status.textContent = message;
@@ -508,6 +598,38 @@ async function initBoard() {
     empty.className = "board-empty";
     empty.textContent = message;
     postList.appendChild(empty);
+  }
+
+  function openPostFromQuery() {
+    if (postFromQueryHandled) {
+      return;
+    }
+
+    const targetPostId = String(
+      new URLSearchParams(window.location.search).get("post") || "",
+    ).trim();
+    if (!targetPostId) {
+      return;
+    }
+
+    const entries = Array.from(
+      postList.querySelectorAll(".board-post-entry[data-post-id]"),
+    );
+    const targetEntry = entries.find(
+      (entry) => String(entry.dataset.postId || "").trim() === targetPostId,
+    );
+    if (!targetEntry) {
+      return;
+    }
+
+    targetEntry.open = true;
+    postFromQueryHandled = true;
+    window.requestAnimationFrame(() => {
+      targetEntry.scrollIntoView({
+        behavior: prefersReducedMotion ? "auto" : "smooth",
+        block: "center",
+      });
+    });
   }
 
   async function deletePost(postId) {
@@ -583,6 +705,7 @@ async function initBoard() {
       });
 
       setStatus(`공지사항 ${posts.length}건`, "ok");
+      openPostFromQuery();
     } catch (error) {
       console.error(error);
       renderEmpty("공지사항을 불러오지 못했습니다.");
@@ -965,8 +1088,10 @@ function createBoardPreviewItem(post) {
   const top = document.createElement("div");
   top.className = "board-post-top";
 
-  const title = document.createElement("p");
-  title.className = "board-post-title";
+  const title = document.createElement("a");
+  title.className = "board-post-title board-post-title-link";
+  const postId = String(post?.id ?? "").trim();
+  title.href = postId ? `notice.html?post=${encodeURIComponent(postId)}` : "notice.html";
   title.textContent = String(post?.title || "(제목 없음)");
 
   const date = document.createElement("span");
