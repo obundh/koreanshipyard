@@ -3,7 +3,7 @@
     title: "낚시선 생산 라인",
     description: "3톤부터 9.77톤급까지 현장 요구에 맞춘 낚시선을 안정적으로 제작합니다.",
     meta: "톤급: 3톤 ~ 9.77톤급",
-    image: "shipphoto/낚시선_4.99t-5.5t_1.jpg",
+    image: "shipphoto/낚시선_5.5t-6.67t_1.jpg",
   },
   {
     title: "어선 생산 라인",
