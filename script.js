@@ -10,8 +10,8 @@
     title: "어선 생산 라인",
     description: "3톤부터 50톤급까지 각 톤급별 몰드를 보유해 안정적인 생산이 가능합니다.",
     meta: "톤급: 3톤 ~ 50톤급 (각 톤급별 몰드 보유)",
-    image: "shipphoto/어선_9.77t_3.jpg",
-    position: "center 90%",
+    image: "shipphoto/어선_12t-19t_2.jpg",
+    position: "center 70%",
   },
   {
     title: "기타선박(통선) 생산 라인",
