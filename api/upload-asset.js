@@ -86,6 +86,30 @@ function extensionFromMime(mime) {
   return map[mime] || "bin";
 }
 
+async function ensureBucketExists(config, bucketName) {
+  const createBucketUrl = `${config.supabaseUrl}/storage/v1/bucket`;
+  const response = await fetch(createBucketUrl, {
+    method: "POST",
+    headers: {
+      apikey: config.serviceRoleKey,
+      Authorization: `Bearer ${config.serviceRoleKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      id: bucketName,
+      name: bucketName,
+      public: true,
+    }),
+  });
+
+  if (response.ok || response.status === 409) {
+    return;
+  }
+
+  const detail = await readErrorPayload(response);
+  throw new Error(detail || "버킷 생성 실패");
+}
+
 module.exports = async function handler(req, res) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
@@ -166,6 +190,8 @@ module.exports = async function handler(req, res) {
   const publicUrl = `${configResult.supabaseUrl}/storage/v1/object/public/${bucketName}/${encodedPath}`;
 
   try {
+    await ensureBucketExists(configResult, bucketName);
+
     const uploadResponse = await fetch(uploadUrl, {
       method: "POST",
       headers: {

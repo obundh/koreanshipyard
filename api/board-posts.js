@@ -9,6 +9,7 @@ const {
 const TABLE_NAME = "board_posts";
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 50;
+const ATTACHMENT_COLUMN_MISSING_PATTERN = /(attachment_url|attachment_name).*(does not exist|not exist)|column\s+board_posts\.(attachment_url|attachment_name)\s+does not exist/i;
 
 function pickStringParam(value) {
   if (Array.isArray(value)) {
@@ -119,6 +120,22 @@ function sanitizePostPayload(payload) {
   };
 }
 
+function hasMissingAttachmentColumns(detail) {
+  return ATTACHMENT_COLUMN_MISSING_PATTERN.test(String(detail || ""));
+}
+
+function normalizePostRow(row) {
+  if (!row || typeof row !== "object") {
+    return {};
+  }
+
+  return {
+    ...row,
+    attachment_url: row.attachment_url ?? null,
+    attachment_name: row.attachment_name ?? null,
+  };
+}
+
 module.exports = async function handler(req, res) {
   if (req.method !== "GET" && req.method !== "POST" && req.method !== "DELETE") {
     res.setHeader("Allow", "GET, POST, DELETE");
@@ -144,25 +161,44 @@ module.exports = async function handler(req, res) {
 
   if (req.method === "GET") {
     const limit = pickLimit(req);
-    const query = `?select=id,title,author,content,attachment_url,attachment_name,created_at&order=created_at.desc&limit=${limit}`;
+    const queryWithAttachment = `?select=id,title,author,content,attachment_url,attachment_name,created_at&order=created_at.desc&limit=${limit}`;
+    const queryWithoutAttachment = `?select=id,title,author,content,created_at&order=created_at.desc&limit=${limit}`;
 
     try {
-      const response = await fetch(`${endpointBase}${query}`, {
+      let response = await fetch(`${endpointBase}${queryWithAttachment}`, {
         method: "GET",
         headers: serviceHeaders,
       });
 
       if (!response.ok) {
         const detail = await readErrorPayload(response);
-        return res.status(502).json({
-          message: "공지사항 조회에 실패했습니다.",
-          detail,
-        });
+
+        if (hasMissingAttachmentColumns(detail)) {
+          response = await fetch(`${endpointBase}${queryWithoutAttachment}`, {
+            method: "GET",
+            headers: serviceHeaders,
+          });
+
+          if (!response.ok) {
+            const retryDetail = await readErrorPayload(response);
+            return res.status(502).json({
+              message: "공지사항 조회에 실패했습니다.",
+              detail: retryDetail,
+            });
+          }
+        } else {
+          return res.status(502).json({
+            message: "공지사항 조회에 실패했습니다.",
+            detail,
+          });
+        }
       }
 
       const posts = await response.json();
       res.setHeader("Cache-Control", "no-store");
-      return res.status(200).json(Array.isArray(posts) ? posts : []);
+      return res.status(200).json(
+        Array.isArray(posts) ? posts.map((row) => normalizePostRow(row)) : [],
+      );
     } catch (_) {
       return res.status(502).json({
         message: "공지사항 조회 중 서버 오류가 발생했습니다.",
@@ -229,8 +265,14 @@ module.exports = async function handler(req, res) {
     });
   }
 
+  const fallbackPayload = {
+    author: sanitized.payload.author,
+    title: sanitized.payload.title,
+    content: sanitized.payload.content,
+  };
+
   try {
-    const response = await fetch(endpointBase, {
+    let response = await fetch(endpointBase, {
       method: "POST",
       headers: {
         ...serviceHeaders,
@@ -241,15 +283,35 @@ module.exports = async function handler(req, res) {
 
     if (!response.ok) {
       const detail = await readErrorPayload(response);
-      return res.status(502).json({
-        message: "공지사항 등록에 실패했습니다.",
-        detail,
-      });
+
+      if (hasMissingAttachmentColumns(detail)) {
+        response = await fetch(endpointBase, {
+          method: "POST",
+          headers: {
+            ...serviceHeaders,
+            Prefer: "return=representation",
+          },
+          body: JSON.stringify(fallbackPayload),
+        });
+
+        if (!response.ok) {
+          const retryDetail = await readErrorPayload(response);
+          return res.status(502).json({
+            message: "공지사항 등록에 실패했습니다.",
+            detail: retryDetail,
+          });
+        }
+      } else {
+        return res.status(502).json({
+          message: "공지사항 등록에 실패했습니다.",
+          detail,
+        });
+      }
     }
 
     const inserted = await response.json();
     const row = Array.isArray(inserted) ? inserted[0] : inserted;
-    return res.status(201).json(row || {});
+    return res.status(201).json(normalizePostRow(row));
   } catch (_) {
     return res.status(502).json({
       message: "공지사항 등록 중 서버 오류가 발생했습니다.",
