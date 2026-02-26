@@ -1627,6 +1627,11 @@ body.admin-modal-open {
   padding: 1rem;
 }
 
+.admin-login-modal[hidden],
+.admin-editor-modal[hidden] {
+  display: none !important;
+}
+
 .admin-login-backdrop,
 .admin-editor-backdrop {
   position: absolute;

@@ -1142,7 +1142,6 @@
 
   async function initAdminCms() {
     ensureFooterAdminTrigger();
-    ensureLoginModal();
 
     await bootstrapAdminAuthFromStorage();
     await loadSiteContent();
