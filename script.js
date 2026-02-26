@@ -500,7 +500,11 @@ async function initBoard() {
       setStatus("공지사항을 불러오는 중입니다...");
       const response = await fetch("/api/board-posts?limit=20", { method: "GET" });
       if (!response.ok) {
-        throw new Error(`LOAD_FAILED_${response.status}`);
+        const message = await readErrorMessage(
+          response,
+          `공지사항 불러오기 실패 (${response.status})`,
+        );
+        throw new Error(message);
       }
 
       const posts = await response.json();
@@ -530,7 +534,7 @@ async function initBoard() {
     } catch (error) {
       console.error(error);
       renderEmpty("공지사항을 불러오지 못했습니다.");
-      setStatus("불러오기 실패: 서버 API(/api/board-posts) 설정을 확인해 주세요.", "error");
+      setStatus(`불러오기 실패: ${String(error?.message || "알 수 없는 오류")}`, "error");
     }
   }
 
@@ -825,7 +829,11 @@ async function initBoardPreview() {
     setStatus("최근 공지를 불러오는 중입니다...");
     const response = await fetch("/api/board-posts?limit=3", { method: "GET" });
     if (!response.ok) {
-      throw new Error(`PREVIEW_LOAD_FAILED_${response.status}`);
+      const message = await readErrorMessage(
+        response,
+        `최근 공지 불러오기 실패 (${response.status})`,
+      );
+      throw new Error(message);
     }
 
     const posts = await response.json();
@@ -844,7 +852,7 @@ async function initBoardPreview() {
   } catch (error) {
     console.error(error);
     renderEmpty("공지사항을 불러오지 못했습니다.");
-    setStatus("불러오기 실패: 서버 API(/api/board-posts) 설정을 확인해 주세요.", "error");
+    setStatus(`불러오기 실패: ${String(error?.message || "알 수 없는 오류")}`, "error");
   }
 }
 
