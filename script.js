@@ -43,7 +43,7 @@ function renderHero(index) {
   activeHeroIndex = safeIndex;
 
   heroStage.style.backgroundImage =
-    `linear-gradient(120deg, rgba(8, 24, 54, 0.74), rgba(20, 53, 108, 0.42) 45%, rgba(11, 33, 70, 0.78)), url("${product.image}")`;
+    `linear-gradient(120deg, rgba(8, 24, 54, 0.44), rgba(20, 53, 108, 0.24) 45%, rgba(11, 33, 70, 0.46)), url("${product.image}")`;
 
   heroTitle.textContent = product.title;
   heroDesc.textContent = product.description;
