@@ -67,6 +67,7 @@ const homeFishingVesselSlides = [
 ];
 
 const ADMIN_TOKEN_STORAGE_KEY = "kms_admin_access_token";
+const ADMIN_SESSION_ENDPOINT = "/api/admin-session";
 const PUBLIC_CONFIG_ENDPOINT = "/api/public-config";
 const MAX_UPLOAD_BYTES = Math.floor(4.3 * 1024 * 1024);
 const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -141,25 +142,16 @@ function initHomeFishingVesselSlider() {
   const image = sliderRoot.querySelector("[data-home-vessel-image]");
   const title = sliderRoot.querySelector("[data-home-vessel-title]");
   const tonnage = sliderRoot.querySelector("[data-home-vessel-tonnage]");
-  const current = sliderRoot.querySelector("[data-home-vessel-current]");
-  const total = sliderRoot.querySelector("[data-home-vessel-total]");
-  const prevButton = sliderRoot.querySelector("[data-home-vessel-prev]");
-  const nextButton = sliderRoot.querySelector("[data-home-vessel-next]");
+  const dotsRoot = sliderRoot.querySelector("[data-home-vessel-dots]");
 
-  if (
-    !image ||
-    !title ||
-    !tonnage ||
-    !current ||
-    !total ||
-    !prevButton ||
-    !nextButton
-  ) {
+  if (!image || !title || !tonnage || !dotsRoot) {
     return;
   }
 
   let activeIndex = 0;
-  total.textContent = String(homeFishingVesselSlides.length);
+  let autoplayTimer = null;
+  const autoplayDelay = 4200;
+  const dots = [];
 
   function renderSlide(index) {
     const safeIndex =
@@ -171,13 +163,63 @@ function initHomeFishingVesselSlider() {
     image.alt = `${slide.title} 이미지`;
     title.textContent = slide.title;
     tonnage.textContent = `톤급: ${slide.tonnage}`;
-    current.textContent = String(safeIndex + 1);
+
+    dots.forEach((dot, dotIndex) => {
+      const selected = dotIndex === safeIndex;
+      dot.classList.toggle("is-active", selected);
+      dot.setAttribute("aria-selected", String(selected));
+    });
   }
 
-  prevButton.addEventListener("click", () => renderSlide(activeIndex - 1));
-  nextButton.addEventListener("click", () => renderSlide(activeIndex + 1));
+  function stopAutoplay() {
+    if (autoplayTimer) {
+      window.clearInterval(autoplayTimer);
+      autoplayTimer = null;
+    }
+  }
+
+  function startAutoplay() {
+    stopAutoplay();
+    if (prefersReducedMotion) {
+      return;
+    }
+    autoplayTimer = window.setInterval(() => {
+      renderSlide(activeIndex + 1);
+    }, autoplayDelay);
+  }
+
+  function goToSlide(index) {
+    renderSlide(index);
+  }
+
+  dotsRoot.innerHTML = "";
+  homeFishingVesselSlides.forEach((slide, index) => {
+    const dot = document.createElement("button");
+    dot.type = "button";
+    dot.className = "home-vessel-dot";
+    dot.setAttribute("role", "tab");
+    dot.setAttribute("aria-selected", "false");
+    dot.setAttribute("aria-label", `${slide.title} 보기`);
+    dot.addEventListener("mouseenter", () => goToSlide(index));
+    dot.addEventListener("focus", () => goToSlide(index));
+    dot.addEventListener("click", () => goToSlide(index));
+    dotsRoot.appendChild(dot);
+    dots.push(dot);
+  });
+
+  sliderRoot.addEventListener("mouseenter", stopAutoplay);
+  sliderRoot.addEventListener("mouseleave", startAutoplay);
+  sliderRoot.addEventListener("focusin", stopAutoplay);
+  sliderRoot.addEventListener("focusout", () => {
+    window.setTimeout(() => {
+      if (!sliderRoot.contains(document.activeElement)) {
+        startAutoplay();
+      }
+    }, 0);
+  });
 
   renderSlide(0);
+  startAutoplay();
 }
 
 initHomeFishingVesselSlider();
@@ -422,19 +464,14 @@ function formatBoardDate(value) {
 }
 
 function readAdminToken() {
-  let sessionToken = "";
   try {
-    sessionToken = String(window.sessionStorage.getItem(ADMIN_TOKEN_STORAGE_KEY) || "").trim();
+    window.localStorage.removeItem(ADMIN_TOKEN_STORAGE_KEY);
   } catch (_) {
-    sessionToken = "";
-  }
-
-  if (sessionToken) {
-    return sessionToken;
+    // Ignore storage access errors.
   }
 
   try {
-    return String(window.localStorage.getItem(ADMIN_TOKEN_STORAGE_KEY) || "").trim();
+    return String(window.sessionStorage.getItem(ADMIN_TOKEN_STORAGE_KEY) || "").trim();
   } catch (_) {
     return "";
   }
@@ -451,6 +488,25 @@ function clearAdminToken() {
     window.localStorage.removeItem(ADMIN_TOKEN_STORAGE_KEY);
   } catch (_) {
     // Ignore storage access errors.
+  }
+}
+
+async function verifyAdminSessionToken(token) {
+  const safeToken = String(token || "").trim();
+  if (!safeToken) {
+    return false;
+  }
+
+  try {
+    const response = await fetch(ADMIN_SESSION_ENDPOINT, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${safeToken}`,
+      },
+    });
+    return response.ok;
+  } catch (_) {
+    return false;
   }
 }
 
@@ -578,7 +634,7 @@ async function initBoard() {
     return;
   }
 
-  let canManage = Boolean(readAdminToken());
+  let canManage = false;
   let postFromQueryHandled = false;
 
   function setStatus(message, mode = "normal") {
@@ -630,6 +686,24 @@ async function initBoard() {
         block: "center",
       });
     });
+  }
+
+  async function refreshManageAccess() {
+    const token = readAdminToken();
+    if (!token) {
+      canManage = false;
+      return false;
+    }
+
+    const verified = await verifyAdminSessionToken(token);
+    if (!verified) {
+      clearAdminToken();
+      canManage = false;
+      return false;
+    }
+
+    canManage = true;
+    return true;
   }
 
   async function deletePost(postId) {
@@ -713,20 +787,21 @@ async function initBoard() {
     }
   }
 
-  window.addEventListener("kms-admin-auth-change", async (event) => {
-    canManage = Boolean(event?.detail?.loggedIn) && Boolean(readAdminToken());
+  window.addEventListener("kms-admin-auth-change", async () => {
+    await refreshManageAccess();
     await loadPosts();
   });
 
   window.addEventListener("focus", async () => {
-    const next = Boolean(readAdminToken());
-    if (next === canManage) {
+    const previous = canManage;
+    await refreshManageAccess();
+    if (previous === canManage) {
       return;
     }
-    canManage = next;
     await loadPosts();
   });
 
+  await refreshManageAccess();
   await loadPosts();
 }
 
@@ -965,12 +1040,27 @@ async function initBoardWritePage() {
     syncAttachmentUi();
   }
 
-  function syncWriteAccess() {
-    const hasToken = Boolean(readAdminToken());
-    authGuide.hidden = hasToken;
-    form.hidden = !hasToken;
-    form.classList.toggle("is-disabled", !hasToken);
-    if (!hasToken) {
+  let writeAccessRevision = 0;
+
+  async function syncWriteAccess() {
+    const revision = ++writeAccessRevision;
+    const token = readAdminToken();
+    let hasAccess = false;
+    if (token) {
+      hasAccess = await verifyAdminSessionToken(token);
+      if (!hasAccess) {
+        clearAdminToken();
+      }
+    }
+
+    if (revision !== writeAccessRevision) {
+      return;
+    }
+
+    authGuide.hidden = hasAccess;
+    form.hidden = !hasAccess;
+    form.classList.toggle("is-disabled", !hasAccess);
+    if (!hasAccess) {
       clearAttachment();
     }
   }
@@ -987,10 +1077,11 @@ async function initBoardWritePage() {
       }
 
       const token = readAdminToken();
-      if (!token) {
+      if (!token || !(await verifyAdminSessionToken(token))) {
+        clearAdminToken();
         setStatus("관리자 로그인 후 첨부할 수 있습니다.", "error");
         clearAttachment();
-        syncWriteAccess();
+        await syncWriteAccess();
         return;
       }
 
@@ -1019,9 +1110,10 @@ async function initBoardWritePage() {
     event.preventDefault();
 
     const token = readAdminToken();
-    if (!token) {
+    if (!token || !(await verifyAdminSessionToken(token))) {
+      clearAdminToken();
       setStatus("관리자 로그인 후 이용해 주세요.", "error");
-      syncWriteAccess();
+      await syncWriteAccess();
       return;
     }
 
@@ -1056,7 +1148,7 @@ async function initBoardWritePage() {
         const errorMessage = await readErrorMessage(response, "공지사항 등록에 실패했습니다.");
         if (response.status === 401 || response.status === 403) {
           clearAdminToken();
-          syncWriteAccess();
+          await syncWriteAccess();
         }
         throw new Error(errorMessage);
       }
@@ -1073,10 +1165,14 @@ async function initBoardWritePage() {
     }
   });
 
-  window.addEventListener("kms-admin-auth-change", syncWriteAccess);
-  window.addEventListener("focus", syncWriteAccess);
+  window.addEventListener("kms-admin-auth-change", () => {
+    void syncWriteAccess();
+  });
+  window.addEventListener("focus", () => {
+    void syncWriteAccess();
+  });
   syncAttachmentUi();
-  syncWriteAccess();
+  await syncWriteAccess();
 }
 
 initBoardWritePage();

@@ -47,21 +47,18 @@
     }
   }
 
-  function safeLocalStorageGet(key) {
+  function purgeLegacyLocalAdminAuth() {
     try {
-      return String(window.localStorage.getItem(key) || "").trim();
+      window.localStorage.removeItem(ADMIN_TOKEN_STORAGE_KEY);
+      window.localStorage.removeItem(ADMIN_EMAIL_STORAGE_KEY);
     } catch (_) {
-      return "";
+      // Ignore storage errors.
     }
   }
 
-  function safeLocalStorageSet(key, value) {
+  function safeSessionStorageRemove(key) {
     try {
-      if (!value) {
-        window.localStorage.removeItem(key);
-        return;
-      }
-      window.localStorage.setItem(key, value);
+      window.sessionStorage.removeItem(key);
     } catch (_) {
       // Ignore storage errors.
     }
@@ -126,8 +123,7 @@
     adminState.loggedIn = Boolean(adminState.token && adminState.email);
     safeSessionStorageSet(ADMIN_TOKEN_STORAGE_KEY, adminState.token);
     safeSessionStorageSet(ADMIN_EMAIL_STORAGE_KEY, adminState.email);
-    safeLocalStorageSet(ADMIN_TOKEN_STORAGE_KEY, adminState.token);
-    safeLocalStorageSet(ADMIN_EMAIL_STORAGE_KEY, adminState.email);
+    purgeLegacyLocalAdminAuth();
     syncFooterAdminTriggerText();
     dispatchAdminAuthChange();
   }
@@ -214,10 +210,9 @@
   }
 
   async function bootstrapAdminAuthFromStorage() {
-    const token = safeSessionStorageGet(ADMIN_TOKEN_STORAGE_KEY)
-      || safeLocalStorageGet(ADMIN_TOKEN_STORAGE_KEY);
-    const email = safeSessionStorageGet(ADMIN_EMAIL_STORAGE_KEY)
-      || safeLocalStorageGet(ADMIN_EMAIL_STORAGE_KEY);
+    purgeLegacyLocalAdminAuth();
+    const token = safeSessionStorageGet(ADMIN_TOKEN_STORAGE_KEY);
+    const email = safeSessionStorageGet(ADMIN_EMAIL_STORAGE_KEY);
 
     if (!token) {
       clearAdminAuth();
@@ -226,6 +221,8 @@
 
     const verified = await verifyAdminToken(token);
     if (!verified.ok) {
+      safeSessionStorageRemove(ADMIN_TOKEN_STORAGE_KEY);
+      safeSessionStorageRemove(ADMIN_EMAIL_STORAGE_KEY);
       clearAdminAuth();
       return;
     }
