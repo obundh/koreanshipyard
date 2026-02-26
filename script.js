@@ -336,8 +336,19 @@ function formatBoardDate(value) {
 }
 
 function readAdminToken() {
+  let sessionToken = "";
   try {
-    return String(window.sessionStorage.getItem(ADMIN_TOKEN_STORAGE_KEY) || "").trim();
+    sessionToken = String(window.sessionStorage.getItem(ADMIN_TOKEN_STORAGE_KEY) || "").trim();
+  } catch (_) {
+    sessionToken = "";
+  }
+
+  if (sessionToken) {
+    return sessionToken;
+  }
+
+  try {
+    return String(window.localStorage.getItem(ADMIN_TOKEN_STORAGE_KEY) || "").trim();
   } catch (_) {
     return "";
   }
@@ -346,6 +357,12 @@ function readAdminToken() {
 function clearAdminToken() {
   try {
     window.sessionStorage.removeItem(ADMIN_TOKEN_STORAGE_KEY);
+  } catch (_) {
+    // Ignore storage access errors.
+  }
+
+  try {
+    window.localStorage.removeItem(ADMIN_TOKEN_STORAGE_KEY);
   } catch (_) {
     // Ignore storage access errors.
   }

@@ -45,6 +45,26 @@
     }
   }
 
+  function safeLocalStorageGet(key) {
+    try {
+      return String(window.localStorage.getItem(key) || "").trim();
+    } catch (_) {
+      return "";
+    }
+  }
+
+  function safeLocalStorageSet(key, value) {
+    try {
+      if (!value) {
+        window.localStorage.removeItem(key);
+        return;
+      }
+      window.localStorage.setItem(key, value);
+    } catch (_) {
+      // Ignore storage errors.
+    }
+  }
+
   function cloneValue(value) {
     return JSON.parse(JSON.stringify(value));
   }
@@ -73,6 +93,8 @@
     adminState.loggedIn = Boolean(adminState.token && adminState.email);
     safeSessionStorageSet(ADMIN_TOKEN_STORAGE_KEY, adminState.token);
     safeSessionStorageSet(ADMIN_EMAIL_STORAGE_KEY, adminState.email);
+    safeLocalStorageSet(ADMIN_TOKEN_STORAGE_KEY, adminState.token);
+    safeLocalStorageSet(ADMIN_EMAIL_STORAGE_KEY, adminState.email);
     syncFooterAdminTriggerText();
     dispatchAdminAuthChange();
   }
@@ -151,8 +173,10 @@
   }
 
   async function bootstrapAdminAuthFromStorage() {
-    const token = safeSessionStorageGet(ADMIN_TOKEN_STORAGE_KEY);
-    const email = safeSessionStorageGet(ADMIN_EMAIL_STORAGE_KEY);
+    const token = safeSessionStorageGet(ADMIN_TOKEN_STORAGE_KEY)
+      || safeLocalStorageGet(ADMIN_TOKEN_STORAGE_KEY);
+    const email = safeSessionStorageGet(ADMIN_EMAIL_STORAGE_KEY)
+      || safeLocalStorageGet(ADMIN_EMAIL_STORAGE_KEY);
 
     if (!token) {
       clearAdminAuth();
