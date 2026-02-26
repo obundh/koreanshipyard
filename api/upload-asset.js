@@ -7,6 +7,21 @@ const {
 } = require("./_admin-auth");
 
 const DEFAULT_BUCKET = "site-assets";
+const MAX_FILE_BYTES = 4 * 1024 * 1024;
+
+const ALLOWED_MIME_PREFIXES = ["image/", "video/"];
+const ALLOWED_EXACT_MIMES = new Set([
+  "application/pdf",
+  "application/x-hwp",
+  "application/haansofthwp",
+  "application/msword",
+  "application/vnd.ms-powerpoint",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  "text/plain",
+]);
 
 function sanitizeSegment(value) {
   return String(value || "")
@@ -25,31 +40,50 @@ function parseDataUrl(dataUrl) {
 
   const mime = String(match[1] || "").trim().toLowerCase();
   const base64 = String(match[2] || "").trim();
-  if (!mime.startsWith("image/") || !base64) {
+
+  if (!mime || !base64) {
     return null;
   }
 
   return { mime, base64 };
 }
 
+function isAllowedMime(mime) {
+  if (!mime) {
+    return false;
+  }
+
+  if (ALLOWED_EXACT_MIMES.has(mime)) {
+    return true;
+  }
+
+  return ALLOWED_MIME_PREFIXES.some((prefix) => mime.startsWith(prefix));
+}
+
 function extensionFromMime(mime) {
-  const normalized = String(mime || "").toLowerCase();
-  if (normalized === "image/jpeg") {
-    return "jpg";
-  }
-  if (normalized === "image/png") {
-    return "png";
-  }
-  if (normalized === "image/webp") {
-    return "webp";
-  }
-  if (normalized === "image/gif") {
-    return "gif";
-  }
-  if (normalized === "image/svg+xml") {
-    return "svg";
-  }
-  return "bin";
+  const map = {
+    "image/jpeg": "jpg",
+    "image/png": "png",
+    "image/webp": "webp",
+    "image/gif": "gif",
+    "image/svg+xml": "svg",
+    "video/mp4": "mp4",
+    "video/webm": "webm",
+    "video/quicktime": "mov",
+    "video/x-msvideo": "avi",
+    "application/pdf": "pdf",
+    "application/x-hwp": "hwp",
+    "application/haansofthwp": "hwp",
+    "application/msword": "doc",
+    "application/vnd.ms-powerpoint": "ppt",
+    "application/vnd.ms-excel": "xls",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "xlsx",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation": "pptx",
+    "text/plain": "txt",
+  };
+
+  return map[mime] || "bin";
 }
 
 module.exports = async function handler(req, res) {
@@ -85,7 +119,13 @@ module.exports = async function handler(req, res) {
   const parsed = parseDataUrl(body.dataUrl);
   if (!parsed) {
     return res.status(400).json({
-      message: "이미지 데이터(dataUrl)가 올바르지 않습니다.",
+      message: "파일 데이터(dataUrl)가 올바르지 않습니다.",
+    });
+  }
+
+  if (!isAllowedMime(parsed.mime)) {
+    return res.status(400).json({
+      message: "지원하지 않는 파일 형식입니다.",
     });
   }
 
@@ -94,28 +134,33 @@ module.exports = async function handler(req, res) {
     binary = Buffer.from(parsed.base64, "base64");
   } catch (_) {
     return res.status(400).json({
-      message: "이미지 데이터 디코딩에 실패했습니다.",
+      message: "파일 데이터 디코딩에 실패했습니다.",
     });
   }
 
   if (!binary.length) {
     return res.status(400).json({
-      message: "이미지 데이터가 비어 있습니다.",
+      message: "업로드할 파일 데이터가 없습니다.",
     });
   }
 
-  if (binary.length > 2 * 1024 * 1024) {
+  if (binary.length > MAX_FILE_BYTES) {
     return res.status(400).json({
-      message: "이미지 파일은 2MB 이하만 업로드할 수 있습니다.",
+      message: "파일은 4MB 이하만 업로드할 수 있습니다.",
     });
   }
 
-  const bucketName = sanitizeSegment(process.env.SUPABASE_STORAGE_BUCKET || DEFAULT_BUCKET) || DEFAULT_BUCKET;
-  const folder = sanitizeSegment(body.folder || "cms-images") || "cms-images";
+  const bucketName =
+    sanitizeSegment(process.env.SUPABASE_STORAGE_BUCKET || DEFAULT_BUCKET) ||
+    DEFAULT_BUCKET;
+  const folder = sanitizeSegment(body.folder || "cms-assets") || "cms-assets";
   const ext = extensionFromMime(parsed.mime);
   const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}.${ext}`;
   const objectPath = `${folder}/${filename}`;
-  const encodedPath = objectPath.split("/").map((segment) => encodeURIComponent(segment)).join("/");
+  const encodedPath = objectPath
+    .split("/")
+    .map((segment) => encodeURIComponent(segment))
+    .join("/");
 
   const uploadUrl = `${configResult.supabaseUrl}/storage/v1/object/${bucketName}/${encodedPath}`;
   const publicUrl = `${configResult.supabaseUrl}/storage/v1/object/public/${bucketName}/${encodedPath}`;
@@ -135,7 +180,7 @@ module.exports = async function handler(req, res) {
     if (!uploadResponse.ok) {
       const detail = await readErrorPayload(uploadResponse);
       return res.status(502).json({
-        message: "이미지 업로드에 실패했습니다. Storage 버킷 설정을 확인해 주세요.",
+        message: "파일 업로드에 실패했습니다. Storage 버킷 설정을 확인해 주세요.",
         detail,
       });
     }
@@ -145,10 +190,12 @@ module.exports = async function handler(req, res) {
       url: publicUrl,
       path: objectPath,
       bucket: bucketName,
+      mime: parsed.mime,
+      size: binary.length,
     });
   } catch (_) {
     return res.status(502).json({
-      message: "이미지 업로드 중 서버 오류가 발생했습니다.",
+      message: "파일 업로드 중 서버 오류가 발생했습니다.",
     });
   }
 };

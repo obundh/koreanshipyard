@@ -6,8 +6,16 @@ create table if not exists public.board_posts (
   title text not null check (char_length(title) <= 120),
   author text check (author is null or char_length(author) <= 30),
   content text not null check (char_length(content) <= 2000),
+  attachment_url text,
+  attachment_name text check (attachment_name is null or char_length(attachment_name) <= 200),
   created_at timestamptz not null default now()
 );
+
+alter table public.board_posts
+  add column if not exists attachment_url text;
+
+alter table public.board_posts
+  add column if not exists attachment_name text;
 
 create index if not exists board_posts_created_at_idx
   on public.board_posts (created_at desc);

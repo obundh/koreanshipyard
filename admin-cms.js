@@ -8,6 +8,7 @@
   const ADMIN_SESSION_ENDPOINT = "/api/admin-session";
   const SITE_CONTENT_ENDPOINT = "/api/site-content";
   const UPLOAD_ASSET_ENDPOINT = "/api/upload-asset";
+  const MAX_ASSET_BYTES = 4 * 1024 * 1024;
 
   const adminState = {
     token: "",
@@ -521,7 +522,7 @@
     });
   }
 
-  async function uploadImageAsset(file) {
+  async function uploadAssetFile(file, folder) {
     if (!isAdminLoggedIn()) {
       throw new Error("관리자 로그인 후 업로드할 수 있습니다.");
     }
@@ -536,12 +537,12 @@
       body: JSON.stringify({
         fileName: file.name,
         dataUrl,
-        folder: "cms-images",
+        folder: folder || "cms-assets",
       }),
     });
 
     if (!response.ok) {
-      const message = await readErrorMessage(response, "이미지 업로드에 실패했습니다.");
+      const message = await readErrorMessage(response, "파일 업로드에 실패했습니다.");
       throw new Error(message);
     }
 
@@ -554,7 +555,17 @@
     return url;
   }
 
-  function createImagePickerField(targetInput) {
+  function createAssetPickerField(targetInput, options = {}) {
+    const {
+      accept = "*/*",
+      mimePrefix = "",
+      folder = "cms-assets",
+      clearLabel = "파일 제거",
+      helpText = "파일 선택 시 즉시 적용됩니다. (4MB 이하)",
+      typeName = "파일",
+      previewType = "none",
+    } = options;
+
     const wrapper = document.createElement("div");
     wrapper.className = "admin-image-picker";
 
@@ -563,24 +574,30 @@
 
     const fileInput = document.createElement("input");
     fileInput.type = "file";
-    fileInput.accept = "image/*";
+    fileInput.accept = accept;
     fileInput.className = "admin-file-input";
 
     const clearButton = document.createElement("button");
     clearButton.type = "button";
     clearButton.className = "btn btn-ghost admin-inline-delete-btn";
-    clearButton.textContent = "이미지 제거";
+    clearButton.textContent = clearLabel;
 
     controls.appendChild(fileInput);
     controls.appendChild(clearButton);
 
     const help = document.createElement("p");
     help.className = "admin-image-picker-help";
-    help.textContent = "파일 선택 시 즉시 적용됩니다. (2MB 이하)";
+    help.textContent = helpText;
 
-    const preview = document.createElement("img");
-    preview.className = "admin-image-picker-preview";
-    preview.alt = "선택 이미지 미리보기";
+    const previewImage = document.createElement("img");
+    previewImage.className = "admin-image-picker-preview";
+    previewImage.alt = "선택 이미지 미리보기";
+
+    const previewVideo = document.createElement("video");
+    previewVideo.className = "admin-image-picker-preview";
+    previewVideo.controls = true;
+    previewVideo.preload = "metadata";
+    previewVideo.muted = true;
 
     function setHelp(message, mode = "normal") {
       help.textContent = message;
@@ -596,13 +613,33 @@
     function syncPreviewByValue() {
       const value = String(targetInput.value || "").trim();
       if (!value) {
-        preview.hidden = true;
-        preview.removeAttribute("src");
+        previewImage.hidden = true;
+        previewImage.removeAttribute("src");
+        previewVideo.hidden = true;
+        previewVideo.removeAttribute("src");
         return;
       }
 
-      preview.src = value;
-      preview.hidden = false;
+      if (previewType === "image") {
+        previewImage.src = value;
+        previewImage.hidden = false;
+        previewVideo.hidden = true;
+        previewVideo.removeAttribute("src");
+        return;
+      }
+
+      if (previewType === "video") {
+        previewVideo.src = value;
+        previewVideo.hidden = false;
+        previewImage.hidden = true;
+        previewImage.removeAttribute("src");
+        return;
+      }
+
+      previewImage.hidden = true;
+      previewImage.removeAttribute("src");
+      previewVideo.hidden = true;
+      previewVideo.removeAttribute("src");
     }
 
     fileInput.addEventListener("change", async () => {
@@ -611,19 +648,19 @@
         return;
       }
 
-      if (!String(file.type || "").startsWith("image/")) {
-        setHelp("이미지 파일만 선택할 수 있습니다.", "error");
+      if (mimePrefix && !String(file.type || "").startsWith(mimePrefix)) {
+        setHelp(`${typeName} 파일만 선택할 수 있습니다.`, "error");
         return;
       }
 
-      if (Number(file.size || 0) > 2 * 1024 * 1024) {
-        setHelp("파일 용량은 2MB 이하만 업로드할 수 있습니다.", "error");
+      if (Number(file.size || 0) > MAX_ASSET_BYTES) {
+        setHelp("파일 용량은 4MB 이하만 업로드할 수 있습니다.", "error");
         return;
       }
 
       try {
         setHelp("업로드 중입니다...");
-        const uploadedUrl = await uploadImageAsset(file);
+        const uploadedUrl = await uploadAssetFile(file, folder);
         targetInput.value = uploadedUrl;
         syncPreviewByValue();
         setHelp(`업로드 완료: ${file.name}`, "ok");
@@ -636,7 +673,7 @@
       targetInput.value = "";
       fileInput.value = "";
       syncPreviewByValue();
-      setHelp("이미지를 제거했습니다.", "ok");
+      setHelp(`${typeName}을(를) 제거했습니다.`, "ok");
     });
 
     targetInput.addEventListener("input", () => {
@@ -646,8 +683,33 @@
     syncPreviewByValue();
     wrapper.appendChild(controls);
     wrapper.appendChild(help);
-    wrapper.appendChild(preview);
+    wrapper.appendChild(previewImage);
+    wrapper.appendChild(previewVideo);
     return wrapper;
+  }
+
+  function createImagePickerField(targetInput) {
+    return createAssetPickerField(targetInput, {
+      accept: "image/*",
+      mimePrefix: "image/",
+      folder: "cms-images",
+      clearLabel: "이미지 제거",
+      helpText: "파일 선택 시 즉시 적용됩니다. (4MB 이하)",
+      typeName: "이미지",
+      previewType: "image",
+    });
+  }
+
+  function createVideoPickerField(targetInput) {
+    return createAssetPickerField(targetInput, {
+      accept: "video/*",
+      mimePrefix: "video/",
+      folder: "cms-videos",
+      clearLabel: "영상 제거",
+      helpText: "파일 선택 시 즉시 적용됩니다. (4MB 이하)",
+      typeName: "영상",
+      previewType: "video",
+    });
   }
 
   async function loadSiteContent() {
@@ -1016,6 +1078,7 @@
 
           const input = createInput("text", "영상 파일 경로 또는 URL", current);
           body.appendChild(createEditorRow("영상 소스", input));
+          body.appendChild(createEditorRow("영상 파일", createVideoPickerField(input)));
 
           return () => ({
             aboutIntroVideoSrc: input.value.trim(),
@@ -1279,3 +1342,4 @@
 
   initAdminCms();
 })();
+

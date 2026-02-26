@@ -1,5 +1,6 @@
 const heroProducts = [
   {
+    tab: "FRP 선박",
     title: "FRP 선박 건조 및 수리",
     description: "FRP 선박 건조 및 수리 작업을 현장 맞춤형으로 안정적으로 수행합니다.",
     meta: "주요 업무: FRP 선박 건조 및 수리",
@@ -7,6 +8,7 @@ const heroProducts = [
     position: "center 72%",
   },
   {
+    tab: "낚시선",
     title: "낚시선 생산 라인",
     description: "3톤부터 9.77톤급까지 현장 요구에 맞춘 낚시선을 안정적으로 제작합니다.",
     meta: "톤급: 3톤 ~ 9.77톤급",
@@ -14,6 +16,7 @@ const heroProducts = [
     position: "center 90%",
   },
   {
+    tab: "어선",
     title: "어선 생산 라인",
     description: "3톤부터 50톤급까지 각 톤급별 몰드를 보유해 안정적인 생산이 가능합니다.",
     meta: "톤급: 3톤 ~ 50톤급 (각 톤급별 몰드 보유)",
@@ -21,25 +24,31 @@ const heroProducts = [
     position: "center 70%",
   },
   {
+    tab: "기타선박(통선)",
     title: "기타선박(통선) 생산 라인",
     description: "7.93톤부터 9.77톤급 통선 생산 기준에 맞춰 품질과 납기를 관리합니다.",
     meta: "톤급: 7.93톤 ~ 9.77톤급",
     image: "sample-image-1.png",
+    position: "center center",
   },
 ];
 
+const ADMIN_TOKEN_STORAGE_KEY = "kms_admin_access_token";
 const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
 const heroStage = document.querySelector(".hero-stage");
 const heroTitle = document.querySelector("#hero-title");
 const heroDesc = document.querySelector("#hero-desc");
 const heroMeta = document.querySelector("#hero-meta");
 const heroTabs = document.querySelectorAll(".hero-tab");
+
 const hasHero =
   heroStage &&
   heroTitle &&
   heroDesc &&
   heroMeta &&
   heroTabs.length === heroProducts.length;
+
 let activeHeroIndex = 0;
 
 function buildHeroGradient() {
@@ -56,11 +65,10 @@ function renderHero(index) {
 
   const safeIndex = (index + heroProducts.length) % heroProducts.length;
   const product = heroProducts[safeIndex];
+  const backgroundPosition = product.position || "center center";
   activeHeroIndex = safeIndex;
-  const backgroundPosition = product.position ?? "center center";
 
-  heroStage.style.backgroundImage =
-    `${buildHeroGradient()}, url("${product.image}")`;
+  heroStage.style.backgroundImage = `${buildHeroGradient()}, url("${product.image}")`;
   heroStage.style.backgroundPosition = `center center, ${backgroundPosition}`;
   heroStage.style.backgroundSize = "cover, cover";
   heroStage.style.backgroundRepeat = "no-repeat, no-repeat";
@@ -73,6 +81,7 @@ function renderHero(index) {
     const selected = tabIndex === safeIndex;
     tab.classList.toggle("is-active", selected);
     tab.setAttribute("aria-selected", String(selected));
+    tab.textContent = heroProducts[tabIndex]?.tab || tab.textContent;
   });
 }
 
@@ -88,7 +97,6 @@ if (hasHero) {
 }
 
 const revealTargets = document.querySelectorAll(".reveal, .reveal-item");
-
 revealTargets.forEach((node, index) => {
   if (node.classList.contains("reveal-item")) {
     node.style.setProperty("--stagger", `${(index % 6) * 0.08}s`);
@@ -160,26 +168,12 @@ async function initLocationMap() {
     });
 
     if (!response.ok) {
-      let reason = `MAP_DATA_FAILED_${response.status}`;
-      try {
-        const errorBody = await response.json();
-        if (typeof errorBody?.message === "string" && errorBody.message.trim()) {
-          reason = errorBody.message;
-        }
-      } catch (_) {
-        // Ignore response body parse errors.
-      }
-      throw new Error(reason);
+      throw new Error(`MAP_DATA_FAILED_${response.status}`);
     }
 
     const mapData = await response.json();
-
     if (!mapData?.clientId || !mapData?.center) {
       throw new Error("INVALID_MAP_DATA");
-    }
-
-    if (typeof mapData.message === "string" && mapData.message.trim()) {
-      console.warn("[map]", mapData.message);
     }
 
     await loadNaverMapsSdk(mapData.clientId);
@@ -212,12 +206,12 @@ async function initLocationMap() {
     const detail = String(error?.message || "");
 
     if (detail.includes("404")) {
-      mapElement.textContent = "지도 API 경로(/api/naver-map-data)를 찾지 못했습니다. Vercel 배포 환경에서 확인해 주세요.";
+      mapElement.textContent = "지도 API 경로(/api/naver-map-data)를 찾지 못했습니다.";
       return;
     }
 
     if (detail.includes("SDK_LOAD_FAILED") || detail.includes("SDK_NOT_READY")) {
-      mapElement.textContent = "네이버 지도 SDK 로드에 실패했습니다. 도메인 허용(URL) 설정을 확인해 주세요.";
+      mapElement.textContent = "네이버 지도 SDK 로드에 실패했습니다. 도메인 허용 설정을 확인해 주세요.";
       return;
     }
 
@@ -229,7 +223,6 @@ initLocationMap();
 
 function initProductImageLightbox() {
   const productImages = document.querySelectorAll(".product-card img");
-
   if (!productImages.length) {
     return;
   }
@@ -257,7 +250,6 @@ function initProductImageLightbox() {
       lightbox.classList.remove("is-open");
       lightbox.setAttribute("aria-hidden", "true");
       document.body.classList.remove("lightbox-open");
-
       if (lastFocusedElement instanceof HTMLElement) {
         lastFocusedElement.focus();
       }
@@ -266,7 +258,6 @@ function initProductImageLightbox() {
     function openLightbox(image) {
       const src = image.getAttribute("src");
       const alt = image.getAttribute("alt") || "제품 사진";
-
       if (!src) {
         return;
       }
@@ -286,7 +277,6 @@ function initProductImageLightbox() {
       if (!(target instanceof HTMLElement)) {
         return;
       }
-
       if (target.dataset.closeLightbox === "true") {
         closeLightbox();
       }
@@ -298,13 +288,10 @@ function initProductImageLightbox() {
       }
     });
 
-    window.__kmsLightboxState = {
-      openLightbox,
-    };
+    window.__kmsLightboxState = { openLightbox };
   }
 
   const lightboxState = window.__kmsLightboxState;
-
   productImages.forEach((image) => {
     if (image.dataset.lightboxBound === "true") {
       return;
@@ -315,15 +302,11 @@ function initProductImageLightbox() {
     image.setAttribute("role", "button");
     image.setAttribute("aria-label", `${alt} 크게 보기`);
 
-    image.addEventListener("click", () => {
-      lightboxState.openLightbox(image);
-    });
-
+    image.addEventListener("click", () => lightboxState.openLightbox(image));
     image.addEventListener("keydown", (event) => {
       if (event.key !== "Enter" && event.key !== " ") {
         return;
       }
-
       event.preventDefault();
       lightboxState.openLightbox(image);
     });
@@ -352,7 +335,38 @@ function formatBoardDate(value) {
   return `${y}.${m}.${d} ${hh}:${mm}`;
 }
 
-function createBoardItem(post) {
+function readAdminToken() {
+  try {
+    return String(window.sessionStorage.getItem(ADMIN_TOKEN_STORAGE_KEY) || "").trim();
+  } catch (_) {
+    return "";
+  }
+}
+
+function clearAdminToken() {
+  try {
+    window.sessionStorage.removeItem(ADMIN_TOKEN_STORAGE_KEY);
+  } catch (_) {
+    // Ignore storage access errors.
+  }
+}
+
+async function readErrorMessage(response, fallbackMessage) {
+  try {
+    const payload = await response.json();
+    if (typeof payload?.message === "string" && payload.message.trim()) {
+      return payload.message;
+    }
+    if (typeof payload?.detail === "string" && payload.detail.trim()) {
+      return payload.detail;
+    }
+  } catch (_) {
+    // Ignore parse errors.
+  }
+  return fallbackMessage;
+}
+
+function createBoardItem(post, options = {}) {
   const item = document.createElement("li");
   item.className = "board-post-item";
 
@@ -375,11 +389,38 @@ function createBoardItem(post) {
   content.className = "board-post-content";
   content.textContent = String(post?.content || "");
 
+  const actions = document.createElement("div");
+  actions.className = "board-post-actions";
+
+  const attachmentUrl = String(post?.attachment_url || "").trim();
+  const attachmentName = String(post?.attachment_name || "").trim();
+  if (attachmentUrl) {
+    const attachmentLink = document.createElement("a");
+    attachmentLink.className = "board-attachment-link";
+    attachmentLink.href = attachmentUrl;
+    attachmentLink.target = "_blank";
+    attachmentLink.rel = "noopener";
+    attachmentLink.textContent = attachmentName || "첨부 파일 열기";
+    actions.appendChild(attachmentLink);
+  }
+
+  if (options.canDelete && typeof options.onDelete === "function") {
+    const deleteButton = document.createElement("button");
+    deleteButton.type = "button";
+    deleteButton.className = "btn btn-ghost board-delete-btn";
+    deleteButton.textContent = "삭제";
+    deleteButton.addEventListener("click", () => options.onDelete(post));
+    actions.appendChild(deleteButton);
+  }
+
   top.appendChild(title);
   top.appendChild(date);
   item.appendChild(top);
   item.appendChild(meta);
   item.appendChild(content);
+  if (actions.childElementCount) {
+    item.appendChild(actions);
+  }
 
   return item;
 }
@@ -392,10 +433,11 @@ async function initBoard() {
 
   const postList = root.querySelector("#board-post-list");
   const status = root.querySelector("#board-status");
-
   if (!postList || !status) {
     return;
   }
+
+  let canManage = Boolean(readAdminToken());
 
   function setStatus(message, mode = "normal") {
     status.textContent = message;
@@ -416,66 +458,140 @@ async function initBoard() {
     postList.appendChild(empty);
   }
 
-  try {
-    setStatus("공지사항을 불러오는 중입니다...");
-    const response = await fetch("/api/board-posts?limit=20", {
-      method: "GET",
-    });
-
-    if (!response.ok) {
-      throw new Error(`LOAD_FAILED_${response.status}`);
+  async function deletePost(postId) {
+    const token = readAdminToken();
+    if (!token) {
+      setStatus("관리자 로그인 후 삭제할 수 있습니다.", "error");
+      return false;
     }
 
-    const posts = await response.json();
-    postList.innerHTML = "";
+    if (!window.confirm("이 공지사항을 삭제하시겠습니까?")) {
+      return false;
+    }
 
-    if (!Array.isArray(posts) || !posts.length) {
-      renderEmpty("등록된 공지사항이 없습니다.");
-      setStatus("공지사항 0건", "ok");
+    try {
+      const response = await fetch(`/api/board-posts?id=${encodeURIComponent(String(postId || ""))}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const message = await readErrorMessage(response, "공지사항 삭제에 실패했습니다.");
+        if (response.status === 401 || response.status === 403) {
+          clearAdminToken();
+          canManage = false;
+        }
+        throw new Error(message);
+      }
+
+      setStatus("공지사항을 삭제했습니다.", "ok");
+      return true;
+    } catch (error) {
+      console.error(error);
+      setStatus(String(error?.message || "공지사항 삭제에 실패했습니다."), "error");
+      return false;
+    }
+  }
+
+  async function loadPosts() {
+    try {
+      setStatus("공지사항을 불러오는 중입니다...");
+      const response = await fetch("/api/board-posts?limit=20", { method: "GET" });
+      if (!response.ok) {
+        throw new Error(`LOAD_FAILED_${response.status}`);
+      }
+
+      const posts = await response.json();
+      postList.innerHTML = "";
+
+      if (!Array.isArray(posts) || !posts.length) {
+        renderEmpty("등록된 공지사항이 없습니다.");
+        setStatus("공지사항 0건", "ok");
+        return;
+      }
+
+      posts.forEach((post) => {
+        postList.appendChild(
+          createBoardItem(post, {
+            canDelete: canManage,
+            onDelete: async (targetPost) => {
+              const deleted = await deletePost(targetPost?.id);
+              if (deleted) {
+                await loadPosts();
+              }
+            },
+          }),
+        );
+      });
+
+      setStatus(`공지사항 ${posts.length}건`, "ok");
+    } catch (error) {
+      console.error(error);
+      renderEmpty("공지사항을 불러오지 못했습니다.");
+      setStatus("불러오기 실패: 서버 API(/api/board-posts) 설정을 확인해 주세요.", "error");
+    }
+  }
+
+  window.addEventListener("kms-admin-auth-change", async (event) => {
+    canManage = Boolean(event?.detail?.loggedIn) && Boolean(readAdminToken());
+    await loadPosts();
+  });
+
+  window.addEventListener("focus", async () => {
+    const next = Boolean(readAdminToken());
+    if (next === canManage) {
       return;
     }
+    canManage = next;
+    await loadPosts();
+  });
 
-    posts.forEach((post) => {
-      postList.appendChild(createBoardItem(post));
-    });
-
-    setStatus(`공지사항 ${posts.length}건`, "ok");
-  } catch (error) {
-    console.error(error);
-    renderEmpty("공지사항을 불러오지 못했습니다.");
-    setStatus("불러오기 실패: 서버 API(/api/board-posts) 설정을 확인해 주세요.", "error");
-  }
+  await loadPosts();
 }
 
 initBoard();
 
-function readAdminToken() {
-  try {
-    return String(window.sessionStorage.getItem("kms_admin_access_token") || "").trim();
-  } catch (_) {
-    return "";
-  }
+function readFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(new Error("FILE_READ_FAILED"));
+    reader.readAsDataURL(file);
+  });
 }
 
-function clearAdminToken() {
-  try {
-    window.sessionStorage.removeItem("kms_admin_access_token");
-  } catch (_) {
-    // Ignore storage access errors.
-  }
-}
+async function uploadAttachmentFile(file, token) {
+  const dataUrl = await readFileAsDataUrl(file);
+  const response = await fetch("/api/upload-asset", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      fileName: file.name,
+      dataUrl,
+      folder: "board-attachments",
+    }),
+  });
 
-async function readErrorMessage(response, fallbackMessage) {
-  try {
-    const payload = await response.json();
-    if (typeof payload?.message === "string" && payload.message.trim()) {
-      return payload.message;
-    }
-  } catch (_) {
-    // Ignore parse errors.
+  if (!response.ok) {
+    const message = await readErrorMessage(response, "첨부 파일 업로드에 실패했습니다.");
+    throw new Error(message);
   }
 
-  return fallbackMessage;
+  const payload = await response.json();
+  const url = String(payload?.url || "").trim();
+  if (!url) {
+    throw new Error("첨부 파일 URL을 받지 못했습니다.");
+  }
+
+  return {
+    url,
+    name: file.name,
+  };
 }
 
 async function initBoardWritePage() {
@@ -487,10 +603,14 @@ async function initBoardWritePage() {
   const form = root.querySelector("#board-write-form");
   const authGuide = root.querySelector("#board-write-auth");
   const status = root.querySelector("#board-write-status");
-
+  const attachmentInput = root.querySelector("#board-attachment");
+  const attachmentMeta = root.querySelector("#board-attachment-meta");
+  const attachmentClear = root.querySelector("#board-attachment-clear");
   if (!form || !authGuide || !status) {
     return;
   }
+
+  const attachmentState = { url: "", name: "" };
 
   function setStatus(message, mode = "normal") {
     status.textContent = message;
@@ -503,18 +623,85 @@ async function initBoardWritePage() {
     }
   }
 
+  function syncAttachmentUi() {
+    if (!attachmentMeta || !attachmentClear) {
+      return;
+    }
+
+    if (!attachmentState.url) {
+      attachmentMeta.textContent = "첨부 파일 없음";
+      attachmentClear.hidden = true;
+      return;
+    }
+
+    attachmentMeta.textContent = `첨부됨: ${attachmentState.name}`;
+    attachmentClear.hidden = false;
+  }
+
+  function clearAttachment() {
+    attachmentState.url = "";
+    attachmentState.name = "";
+    if (attachmentInput) {
+      attachmentInput.value = "";
+    }
+    syncAttachmentUi();
+  }
+
   function syncWriteAccess() {
     const hasToken = Boolean(readAdminToken());
     authGuide.hidden = hasToken;
     form.hidden = !hasToken;
     form.classList.toggle("is-disabled", !hasToken);
+    if (!hasToken) {
+      clearAttachment();
+    }
+  }
+
+  if (attachmentClear) {
+    attachmentClear.addEventListener("click", () => clearAttachment());
+  }
+
+  if (attachmentInput) {
+    attachmentInput.addEventListener("change", async () => {
+      const file = attachmentInput.files?.[0];
+      if (!file) {
+        return;
+      }
+
+      const token = readAdminToken();
+      if (!token) {
+        setStatus("관리자 로그인 후 첨부할 수 있습니다.", "error");
+        clearAttachment();
+        syncWriteAccess();
+        return;
+      }
+
+      if (Number(file.size || 0) > 4 * 1024 * 1024) {
+        setStatus("첨부 파일은 4MB 이하만 업로드할 수 있습니다.", "error");
+        clearAttachment();
+        return;
+      }
+
+      try {
+        setStatus("첨부 파일 업로드 중입니다...");
+        const uploaded = await uploadAttachmentFile(file, token);
+        attachmentState.url = uploaded.url;
+        attachmentState.name = uploaded.name;
+        syncAttachmentUi();
+        setStatus("첨부 파일 업로드가 완료되었습니다.", "ok");
+      } catch (error) {
+        console.error(error);
+        clearAttachment();
+        setStatus(String(error?.message || "첨부 파일 업로드에 실패했습니다."), "error");
+      }
+    });
   }
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
 
-    const adminAccessToken = readAdminToken();
-    if (!adminAccessToken) {
+    const token = readAdminToken();
+    if (!token) {
       setStatus("관리자 로그인 후 이용해 주세요.", "error");
       syncWriteAccess();
       return;
@@ -536,12 +723,14 @@ async function initBoardWritePage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${adminAccessToken}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           author,
           title,
           content,
+          attachmentUrl: attachmentState.url,
+          attachmentName: attachmentState.name,
         }),
       });
 
@@ -555,6 +744,7 @@ async function initBoardWritePage() {
       }
 
       form.reset();
+      clearAttachment();
       setStatus("공지사항이 등록되었습니다.", "ok");
       window.setTimeout(() => {
         window.location.href = "notice.html";
@@ -567,10 +757,12 @@ async function initBoardWritePage() {
 
   window.addEventListener("kms-admin-auth-change", syncWriteAccess);
   window.addEventListener("focus", syncWriteAccess);
+  syncAttachmentUi();
   syncWriteAccess();
 }
 
 initBoardWritePage();
+
 function createBoardPreviewItem(post) {
   const item = document.createElement("li");
   item.className = "board-post-item";
@@ -606,11 +798,9 @@ async function initBoardPreview() {
 
   const postList = root.querySelector("#board-preview-list");
   const status = root.querySelector("#board-preview-status");
-
   if (!postList || !status) {
     return;
   }
-  const endpointBase = "/api/board-posts";
 
   function setStatus(message, mode = "normal") {
     status.textContent = message;
@@ -633,10 +823,7 @@ async function initBoardPreview() {
 
   try {
     setStatus("최근 공지를 불러오는 중입니다...");
-    const response = await fetch(`${endpointBase}?limit=3`, {
-      method: "GET",
-    });
-
+    const response = await fetch("/api/board-posts?limit=3", { method: "GET" });
     if (!response.ok) {
       throw new Error(`PREVIEW_LOAD_FAILED_${response.status}`);
     }
@@ -662,4 +849,3 @@ async function initBoardPreview() {
 }
 
 initBoardPreview();
-
