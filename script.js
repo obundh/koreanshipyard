@@ -1,70 +1,100 @@
-const heroProducts = [
+﻿const heroProducts = [
   {
-    tab: "FRP 선박",
-    title: "FRP 선박 건조 및 수리",
-    description: "FRP 선박 건조 및 수리 작업을 현장 맞춤형으로 안정적으로 수행합니다.",
-    meta: "주요 업무: FRP 선박 건조 및 수리",
-    image: "shipphoto/낚시선_5.5t-6.67t_2.jpg",
+    tab: "FRP ?좊컯",
+    title: "FRP ?좊컯 嫄댁“ 諛??섎━",
+    description: "FRP ?좊컯 嫄댁“ 諛??섎━ ?묒뾽???꾩옣 留욎땄?뺤쑝濡??덉젙?곸쑝濡??섑뻾?⑸땲??",
+    meta: "二쇱슂 ?낅Т: FRP ?좊컯 嫄댁“ 諛??섎━",
+    image: "shipphoto/?싳떆??5.5t-6.67t_2.jpg",
     position: "center 72%",
   },
   {
     tab: "낚시선",
-    title: "낚시선 생산 라인",
-    description: "3톤부터 9.77톤급까지 현장 요구에 맞춘 낚시선을 안정적으로 제작합니다.",
-    meta: "톤급: 3톤 ~ 9.77톤급",
-    image: "shipphoto/낚시선_5.5t-6.67t_2.jpg",
+    title: "?싳떆???앹궛 ?쇱씤",
+    description: "3?ㅻ???9.77?ㅺ툒源뚯? ?꾩옣 ?붽뎄??留욎텣 ?싳떆?좎쓣 ?덉젙?곸쑝濡??쒖옉?⑸땲??",
+    meta: "?ㅺ툒: 3??~ 9.77?ㅺ툒",
+    image: "shipphoto/?싳떆??5.5t-6.67t_2.jpg",
     position: "center 90%",
   },
   {
-    tab: "어선",
-    title: "어선 생산 라인",
-    description: "3톤부터 50톤급까지 각 톤급별 몰드를 보유해 안정적인 생산이 가능합니다.",
-    meta: "톤급: 3톤 ~ 50톤급 (각 톤급별 몰드 보유)",
-    image: "shipphoto/어선_12t-19t_2.jpg",
+    tab: "?댁꽑",
+    title: "?댁꽑 ?앹궛 ?쇱씤",
+    description: "3?ㅻ???50?ㅺ툒源뚯? 媛??ㅺ툒蹂?紐곕뱶瑜?蹂댁쑀???덉젙?곸씤 ?앹궛??媛?ν빀?덈떎.",
+    meta: "?ㅺ툒: 3??~ 50?ㅺ툒 (媛??ㅺ툒蹂?紐곕뱶 蹂댁쑀)",
+    image: "shipphoto/?댁꽑_12t-19t_2.jpg",
     position: "center 70%",
   },
   {
-    tab: "기타선박(통선)",
-    title: "기타선박(통선) 생산 라인",
-    description: "7.93톤부터 9.77톤급 통선 생산 기준에 맞춰 품질과 납기를 관리합니다.",
-    meta: "톤급: 7.93톤 ~ 9.77톤급",
+    tab: "湲고??좊컯(?듭꽑)",
+    title: "湲고??좊컯(?듭꽑) ?앹궛 ?쇱씤",
+    description: "7.93?ㅻ???9.77?ㅺ툒 ?듭꽑 ?앹궛 湲곗???留욎떠 ?덉쭏怨??⑷린瑜?愿由ы빀?덈떎.",
+    meta: "?ㅺ툒: 7.93??~ 9.77?ㅺ툒",
     image: "sample-image-1.png",
     position: "center center",
   },
 ];
 
-const homeFishingVesselSlides = [
+const HOME_GALLERY_TABS = [
   {
-    title: "어선 4.99톤급",
-    tonnage: "4.99톤급",
-    image: "shipphoto/어선_4.99t_1.jpg",
+    key: "fishing",
+    label: "낚시선",
+    selector: "#fishing-boat .product-card img",
   },
   {
-    title: "어선 6톤~6.77톤급",
-    tonnage: "6톤~6.77톤급",
-    image: "shipphoto/어선_6t-6.77t_1.jpg",
+    key: "vessel",
+    label: "어선",
+    selector: "#fishing-vessel .product-card img",
   },
   {
-    title: "어선 7.31톤~8.55톤급",
-    tonnage: "7.31톤~8.55톤급",
-    image: "shipphoto/어선_7.31t-8.55t_1.jpg",
-  },
-  {
-    title: "어선 8.55톤~9.16톤급",
-    tonnage: "8.55톤~9.16톤급",
-    image: "shipphoto/어선_8.55t-9.16t_1.jpg",
-  },
-  {
-    title: "어선 9.77톤급",
-    tonnage: "9.77톤급",
-    image: "shipphoto/어선_9.77t_1.jpg",
-  },
-  {
-    title: "어선 12톤~19톤급",
-    tonnage: "12톤~19톤급",
-    image: "shipphoto/어선_12t-19t_1.jpg",
+    key: "utility",
+    label: "기타선박",
+    selector: "#other-vessel .product-card img",
   },
 ];
+
+const HOME_GALLERY_TAB_MAP = HOME_GALLERY_TABS.reduce((accumulator, tab) => {
+  accumulator[tab.key] = tab.label;
+  return accumulator;
+}, {});
+
+function buildGalleryFallbackSlides(label, images) {
+  return images.map((imagePath, index) => ({
+    image: imagePath,
+    title: `${label} ${index + 1}`,
+    meta: `${label} 갤러리`,
+  }));
+}
+
+const HOME_GALLERY_FALLBACK = {
+  fishing: buildGalleryFallbackSlides("낚시선", [
+    "shipphoto/낚시선_4.99t-5.5t_1.jpg",
+    "shipphoto/낚시선_4.99t-5.5t_2.jpg",
+    "shipphoto/낚시선_4.99t-5.5t_3.jpg",
+    "shipphoto/낚시선_4.99t-5.5t_4.jpg",
+    "shipphoto/낚시선_5.5t-6.67t_1.jpg",
+    "shipphoto/낚시선_5.5t-6.67t_2.jpg",
+    "shipphoto/낚시선_5.5t-6.67t_3.jpg",
+    "shipphoto/낚시선_7.93t-8.55t_1.jpg",
+    "shipphoto/낚시선_7.93t-8.55t_2.jpg",
+  ]),
+  vessel: buildGalleryFallbackSlides("어선", [
+    "shipphoto/어선_4.99t_1.jpg",
+    "shipphoto/어선_4.99t_2.jpg",
+    "shipphoto/어선_6t-6.77t_1.jpg",
+    "shipphoto/어선_6t-6.77t_2.jpg",
+    "shipphoto/어선_6t-6.77t_3.jpg",
+    "shipphoto/어선_7.31t-8.55t_1.jpg",
+    "shipphoto/어선_7.31t-8.55t_2.jpg",
+    "shipphoto/어선_7.31t-8.55t_3.jpg",
+    "shipphoto/어선_8.55t-9.16t_1.jpg",
+    "shipphoto/어선_8.55t-9.16t_2.jpg",
+    "shipphoto/어선_9.77t_1.jpg",
+    "shipphoto/어선_9.77t_2.jpg",
+    "shipphoto/어선_9.77t_3.jpg",
+    "shipphoto/어선_12t-19t_1.jpg",
+    "shipphoto/어선_12t-19t_2.jpg",
+  ]),
+  utility: [],
+};
 
 const ADMIN_TOKEN_STORAGE_KEY = "kms_admin_access_token";
 const ADMIN_SESSION_ENDPOINT = "/api/admin-session";
@@ -133,9 +163,88 @@ if (hasHero) {
   renderHero(0);
 }
 
-function initHomeFishingVesselSlider() {
+function createHomeGalleryTitle(altText, imagePath, label, index) {
+  const cleanedAlt = String(altText || "").trim();
+  if (cleanedAlt) {
+    return cleanedAlt;
+  }
+
+  const fileName = String(imagePath || "").split("/").pop() || "";
+  if (!fileName) {
+    return `${label} ${index}`;
+  }
+
+  let decoded = fileName;
+  try {
+    decoded = decodeURIComponent(fileName);
+  } catch (_) {
+    decoded = fileName;
+  }
+
+  return decoded
+    .replace(/\.[^.]+$/, "")
+    .replace(/_/g, " ")
+    .trim();
+}
+
+async function loadHomeGallerySlidesFromProducts() {
+  if (typeof DOMParser === "undefined") {
+    return null;
+  }
+
+  try {
+    const response = await fetch("products.html", {
+      method: "GET",
+      cache: "no-store",
+    });
+    if (!response.ok) {
+      throw new Error(`PRODUCTS_FETCH_FAILED_${response.status}`);
+    }
+
+    const html = await response.text();
+    const parser = new DOMParser();
+    const productsDocument = parser.parseFromString(html, "text/html");
+    const slidesByTab = {};
+
+    HOME_GALLERY_TABS.forEach((tab) => {
+      const imageNodes = Array.from(productsDocument.querySelectorAll(tab.selector));
+      const seenPaths = new Set();
+      const slides = [];
+
+      imageNodes.forEach((node) => {
+        const src = String(node.getAttribute("src") || "").trim();
+        if (!src || seenPaths.has(src)) {
+          return;
+        }
+        seenPaths.add(src);
+
+        const nextIndex = slides.length + 1;
+        const title = createHomeGalleryTitle(
+          node.getAttribute("alt"),
+          src,
+          tab.label,
+          nextIndex,
+        );
+        slides.push({
+          image: src,
+          title,
+          meta: `${tab.label} ${nextIndex}`,
+        });
+      });
+
+      slidesByTab[tab.key] = slides;
+    });
+
+    return slidesByTab;
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
+}
+
+function initHomeProductGallery() {
   const sliderRoot = document.querySelector("[data-home-vessel-slider]");
-  if (!sliderRoot || !homeFishingVesselSlides.length) {
+  if (!sliderRoot) {
     return;
   }
 
@@ -143,31 +252,40 @@ function initHomeFishingVesselSlider() {
   const title = sliderRoot.querySelector("[data-home-vessel-title]");
   const tonnage = sliderRoot.querySelector("[data-home-vessel-tonnage]");
   const dotsRoot = sliderRoot.querySelector("[data-home-vessel-dots]");
+  const tabs = Array.from(sliderRoot.querySelectorAll("[data-home-gallery-tab]"));
+  const emptyMessage = sliderRoot.querySelector("[data-home-gallery-empty]");
+  const figure = sliderRoot.querySelector(".home-vessel-figure");
+  const metaWrap = sliderRoot.querySelector(".home-vessel-meta");
+  const controls = sliderRoot.querySelector(".home-vessel-controls");
 
-  if (!image || !title || !tonnage || !dotsRoot) {
+  if (!image || !title || !tonnage || !dotsRoot || !tabs.length || !figure || !metaWrap || !controls) {
     return;
   }
 
+  const galleryByTab = {};
+  HOME_GALLERY_TABS.forEach((tab) => {
+    galleryByTab[tab.key] = Array.isArray(HOME_GALLERY_FALLBACK[tab.key])
+      ? HOME_GALLERY_FALLBACK[tab.key].map((slide) => ({ ...slide }))
+      : [];
+  });
+
+  let activeTab = String(tabs[0].dataset.homeGalleryTab || HOME_GALLERY_TABS[0].key);
   let activeIndex = 0;
   let autoplayTimer = null;
   const autoplayDelay = 4200;
-  const dots = [];
 
-  function renderSlide(index) {
-    const safeIndex =
-      (index + homeFishingVesselSlides.length) % homeFishingVesselSlides.length;
-    const slide = homeFishingVesselSlides[safeIndex];
-    activeIndex = safeIndex;
+  function getSlides(tabKey) {
+    const key = String(tabKey || "").trim();
+    const slides = galleryByTab[key];
+    return Array.isArray(slides) ? slides : [];
+  }
 
-    image.src = slide.image;
-    image.alt = `${slide.title} 이미지`;
-    title.textContent = slide.title;
-    tonnage.textContent = `톤급: ${slide.tonnage}`;
-
-    dots.forEach((dot, dotIndex) => {
-      const selected = dotIndex === safeIndex;
-      dot.classList.toggle("is-active", selected);
-      dot.setAttribute("aria-selected", String(selected));
+  function updateTabButtons() {
+    tabs.forEach((tabButton) => {
+      const tabKey = String(tabButton.dataset.homeGalleryTab || "").trim();
+      const selected = tabKey === activeTab;
+      tabButton.classList.toggle("is-active", selected);
+      tabButton.setAttribute("aria-selected", String(selected));
     });
   }
 
@@ -180,7 +298,8 @@ function initHomeFishingVesselSlider() {
 
   function startAutoplay() {
     stopAutoplay();
-    if (prefersReducedMotion) {
+    const slides = getSlides(activeTab);
+    if (prefersReducedMotion || slides.length < 2) {
       return;
     }
     autoplayTimer = window.setInterval(() => {
@@ -188,23 +307,75 @@ function initHomeFishingVesselSlider() {
     }, autoplayDelay);
   }
 
-  function goToSlide(index) {
-    renderSlide(index);
+  function setEmptyState(isEmpty) {
+    figure.hidden = isEmpty;
+    metaWrap.hidden = isEmpty;
+    controls.hidden = isEmpty;
+    if (emptyMessage) {
+      emptyMessage.hidden = !isEmpty;
+    }
   }
 
-  dotsRoot.innerHTML = "";
-  homeFishingVesselSlides.forEach((slide, index) => {
-    const dot = document.createElement("button");
-    dot.type = "button";
-    dot.className = "home-vessel-dot";
-    dot.setAttribute("role", "tab");
-    dot.setAttribute("aria-selected", "false");
-    dot.setAttribute("aria-label", `${slide.title} 보기`);
-    dot.addEventListener("mouseenter", () => goToSlide(index));
-    dot.addEventListener("focus", () => goToSlide(index));
-    dot.addEventListener("click", () => goToSlide(index));
-    dotsRoot.appendChild(dot);
-    dots.push(dot);
+  function renderDots() {
+    const slides = getSlides(activeTab);
+    dotsRoot.innerHTML = "";
+
+    slides.forEach((slide, index) => {
+      const dot = document.createElement("button");
+      dot.type = "button";
+      dot.className = "home-vessel-dot";
+      dot.setAttribute("role", "tab");
+      dot.setAttribute("aria-selected", String(index === activeIndex));
+      dot.setAttribute("aria-label", `${slide.title} 보기`);
+      dot.classList.toggle("is-active", index === activeIndex);
+      dot.addEventListener("mouseenter", () => {
+        renderSlide(index);
+      });
+      dot.addEventListener("focus", () => {
+        renderSlide(index);
+      });
+      dot.addEventListener("click", () => {
+        renderSlide(index);
+      });
+      dotsRoot.appendChild(dot);
+    });
+  }
+
+  function renderSlide(index) {
+    const slides = getSlides(activeTab);
+    if (!slides.length) {
+      setEmptyState(true);
+      title.textContent = `${HOME_GALLERY_TAB_MAP[activeTab] || "선박"} 갤러리`;
+      tonnage.textContent = "등록된 사진이 없습니다.";
+      dotsRoot.innerHTML = "";
+      return;
+    }
+
+    setEmptyState(false);
+    const safeIndex = (index + slides.length) % slides.length;
+    activeIndex = safeIndex;
+
+    const slide = slides[safeIndex];
+    image.src = slide.image;
+    image.alt = slide.title;
+    title.textContent = slide.title;
+    tonnage.textContent = slide.meta || `${HOME_GALLERY_TAB_MAP[activeTab] || "선박"} ${safeIndex + 1}`;
+    renderDots();
+  }
+
+  function switchTab(tabKey) {
+    activeTab = tabKey;
+    activeIndex = 0;
+    updateTabButtons();
+    renderSlide(0);
+    startAutoplay();
+  }
+
+  tabs.forEach((tabButton) => {
+    const tabKey = String(tabButton.dataset.homeGalleryTab || "").trim();
+    tabButton.addEventListener("click", () => {
+      switchTab(tabKey);
+    });
   });
 
   sliderRoot.addEventListener("mouseenter", stopAutoplay);
@@ -218,11 +389,29 @@ function initHomeFishingVesselSlider() {
     }, 0);
   });
 
-  renderSlide(0);
-  startAutoplay();
+  switchTab(activeTab);
+
+  void (async () => {
+    const productsSlides = await loadHomeGallerySlidesFromProducts();
+    if (!productsSlides) {
+      return;
+    }
+
+    HOME_GALLERY_TABS.forEach((tab) => {
+      galleryByTab[tab.key] = Array.isArray(productsSlides[tab.key]) ? productsSlides[tab.key] : [];
+    });
+
+    if (!getSlides(activeTab).length) {
+      const fallbackTab = HOME_GALLERY_TABS.find((tab) => getSlides(tab.key).length)?.key;
+      if (fallbackTab) {
+        activeTab = fallbackTab;
+      }
+    }
+    switchTab(activeTab);
+  })();
 }
 
-initHomeFishingVesselSlider();
+initHomeProductGallery();
 
 const revealTargets = document.querySelectorAll(".reveal, .reveal-item");
 revealTargets.forEach((node, index) => {
@@ -285,7 +474,7 @@ async function initLocationMap() {
     return;
   }
 
-  mapElement.textContent = "지도를 불러오는 중입니다...";
+  mapElement.textContent = "吏?꾨? 遺덈윭?ㅻ뒗 以묒엯?덈떎...";
 
   try {
     const response = await fetch("/api/naver-map-data", {
@@ -326,7 +515,7 @@ async function initLocationMap() {
     new window.naver.maps.Marker({
       position: center,
       map,
-      title: "한국마린조선",
+      title: "?쒓뎅留덈┛議곗꽑",
     });
   } catch (error) {
     console.error(error);
@@ -334,16 +523,16 @@ async function initLocationMap() {
     const detail = String(error?.message || "");
 
     if (detail.includes("404")) {
-      mapElement.textContent = "지도 API 경로(/api/naver-map-data)를 찾지 못했습니다.";
+      mapElement.textContent = "吏??API 寃쎈줈(/api/naver-map-data)瑜?李얠? 紐삵뻽?듬땲??";
       return;
     }
 
     if (detail.includes("SDK_LOAD_FAILED") || detail.includes("SDK_NOT_READY")) {
-      mapElement.textContent = "네이버 지도 SDK 로드에 실패했습니다. 도메인 허용 설정을 확인해 주세요.";
+      mapElement.textContent = "?ㅼ씠踰?吏??SDK 濡쒕뱶???ㅽ뙣?덉뒿?덈떎. ?꾨찓???덉슜 ?ㅼ젙???뺤씤??二쇱꽭??";
       return;
     }
 
-    mapElement.textContent = "지도를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.";
+    mapElement.textContent = "吏?꾨? 遺덈윭?ㅼ? 紐삵뻽?듬땲?? ?좎떆 ???ㅼ떆 ?쒕룄??二쇱꽭??";
   }
 }
 
@@ -361,8 +550,8 @@ function initProductImageLightbox() {
     lightbox.setAttribute("aria-hidden", "true");
     lightbox.innerHTML = `
       <div class="image-lightbox-backdrop" data-close-lightbox="true"></div>
-      <figure class="image-lightbox-figure" role="dialog" aria-modal="true" aria-label="확대 이미지 보기">
-        <button type="button" class="image-lightbox-close" data-close-lightbox="true" aria-label="확대 이미지 닫기">&times;</button>
+      <figure class="image-lightbox-figure" role="dialog" aria-modal="true" aria-label="?뺣? ?대?吏 蹂닿린">
+        <button type="button" class="image-lightbox-close" data-close-lightbox="true" aria-label="?뺣? ?대?吏 ?リ린">&times;</button>
         <img src="" alt="">
         <figcaption></figcaption>
       </figure>
@@ -385,7 +574,7 @@ function initProductImageLightbox() {
 
     function openLightbox(image) {
       const src = image.getAttribute("src");
-      const alt = image.getAttribute("alt") || "제품 사진";
+      const alt = image.getAttribute("alt") || "?쒗뭹 ?ъ쭊";
       if (!src) {
         return;
       }
@@ -425,10 +614,10 @@ function initProductImageLightbox() {
       return;
     }
 
-    const alt = image.getAttribute("alt") || "제품 사진";
+    const alt = image.getAttribute("alt") || "?쒗뭹 ?ъ쭊";
     image.setAttribute("tabindex", "0");
     image.setAttribute("role", "button");
-    image.setAttribute("aria-label", `${alt} 크게 보기`);
+    image.setAttribute("aria-label", `${alt} ?ш쾶 蹂닿린`);
 
     image.addEventListener("click", () => lightboxState.openLightbox(image));
     image.addEventListener("keydown", (event) => {
@@ -554,7 +743,7 @@ function createBoardItem(post, options = {}) {
 
   const title = document.createElement("p");
   title.className = "board-post-title";
-  title.textContent = String(post?.title || "(제목 없음)");
+  title.textContent = String(post?.title || "(?쒕ぉ ?놁쓬)");
 
   const date = document.createElement("span");
   date.className = "board-post-date";
@@ -586,7 +775,7 @@ function createBoardItem(post, options = {}) {
     attachmentLink.href = attachmentUrl;
     attachmentLink.target = "_blank";
     attachmentLink.rel = "noopener";
-    attachmentLink.textContent = attachmentName || "첨부 파일 열기";
+    attachmentLink.textContent = attachmentName || "泥⑤? ?뚯씪 ?닿린";
     actions.appendChild(attachmentLink);
   }
 
@@ -594,7 +783,7 @@ function createBoardItem(post, options = {}) {
     const deleteButton = document.createElement("button");
     deleteButton.type = "button";
     deleteButton.className = "btn btn-ghost board-delete-btn";
-    deleteButton.textContent = "삭제";
+    deleteButton.textContent = "??젣";
     deleteButton.addEventListener("click", () => options.onDelete(post));
     actions.appendChild(deleteButton);
   }
@@ -709,11 +898,11 @@ async function initBoard() {
   async function deletePost(postId) {
     const token = readAdminToken();
     if (!token) {
-      setStatus("관리자 로그인 후 삭제할 수 있습니다.", "error");
+      setStatus("愿由ъ옄 濡쒓렇??????젣?????덉뒿?덈떎.", "error");
       return false;
     }
 
-    if (!window.confirm("이 공지사항을 삭제하시겠습니까?")) {
+    if (!window.confirm("??怨듭??ы빆????젣?섏떆寃좎뒿?덇퉴?")) {
       return false;
     }
 
@@ -726,7 +915,7 @@ async function initBoard() {
       });
 
       if (!response.ok) {
-        const message = await readErrorMessage(response, "공지사항 삭제에 실패했습니다.");
+        const message = await readErrorMessage(response, "怨듭??ы빆 ??젣???ㅽ뙣?덉뒿?덈떎.");
         if (response.status === 401 || response.status === 403) {
           clearAdminToken();
           canManage = false;
@@ -734,23 +923,23 @@ async function initBoard() {
         throw new Error(message);
       }
 
-      setStatus("공지사항을 삭제했습니다.", "ok");
+      setStatus("怨듭??ы빆????젣?덉뒿?덈떎.", "ok");
       return true;
     } catch (error) {
       console.error(error);
-      setStatus(String(error?.message || "공지사항 삭제에 실패했습니다."), "error");
+      setStatus(String(error?.message || "怨듭??ы빆 ??젣???ㅽ뙣?덉뒿?덈떎."), "error");
       return false;
     }
   }
 
   async function loadPosts() {
     try {
-      setStatus("공지사항을 불러오는 중입니다...");
+      setStatus("怨듭??ы빆??遺덈윭?ㅻ뒗 以묒엯?덈떎...");
       const response = await fetch("/api/board-posts?limit=20", { method: "GET" });
       if (!response.ok) {
         const message = await readErrorMessage(
           response,
-          `공지사항 불러오기 실패 (${response.status})`,
+          `怨듭??ы빆 遺덈윭?ㅺ린 ?ㅽ뙣 (${response.status})`,
         );
         throw new Error(message);
       }
@@ -759,7 +948,7 @@ async function initBoard() {
       postList.innerHTML = "";
 
       if (!Array.isArray(posts) || !posts.length) {
-        renderEmpty("등록된 공지사항이 없습니다.");
+        renderEmpty("?깅줉??怨듭??ы빆???놁뒿?덈떎.");
         setStatus("공지사항 0건", "ok");
         return;
       }
@@ -782,8 +971,8 @@ async function initBoard() {
       openPostFromQuery();
     } catch (error) {
       console.error(error);
-      renderEmpty("공지사항을 불러오지 못했습니다.");
-      setStatus(`불러오기 실패: ${String(error?.message || "알 수 없는 오류")}`, "error");
+      renderEmpty("怨듭??ы빆??遺덈윭?ㅼ? 紐삵뻽?듬땲??");
+      setStatus(`遺덈윭?ㅺ린 ?ㅽ뙣: ${String(error?.message || "?????녿뒗 ?ㅻ쪟")}`, "error");
     }
   }
 
@@ -857,7 +1046,7 @@ async function getPublicUploadConfig() {
     })
       .then(async (response) => {
         if (!response.ok) {
-          const message = await readErrorMessage(response, "공개 업로드 설정을 불러오지 못했습니다.");
+          const message = await readErrorMessage(response, "怨듦컻 ?낅줈???ㅼ젙??遺덈윭?ㅼ? 紐삵뻽?듬땲??");
           throw new Error(message);
         }
         return response.json();
@@ -868,7 +1057,7 @@ async function getPublicUploadConfig() {
         const storageBucket = String(payload?.storageBucket || "site-assets").trim();
 
         if (!supabaseUrl || !supabaseAnonKey || !storageBucket) {
-          throw new Error("업로드 설정이 올바르지 않습니다.");
+          throw new Error("?낅줈???ㅼ젙???щ컮瑜댁? ?딆뒿?덈떎.");
         }
 
         return {
@@ -914,7 +1103,7 @@ async function uploadAttachmentDirectToStorage(file, token, folder) {
   });
 
   if (!response.ok) {
-    const message = await readErrorMessage(response, "스토리지 직접 업로드에 실패했습니다.");
+    const message = await readErrorMessage(response, "?ㅽ넗由ъ? 吏곸젒 ?낅줈?쒖뿉 ?ㅽ뙣?덉뒿?덈떎.");
     throw new Error(message);
   }
 
@@ -937,7 +1126,7 @@ async function uploadAttachmentFile(file, token) {
     const payload = await binaryResponse.json();
     const url = String(payload?.url || "").trim();
     if (!url) {
-      throw new Error("첨부 파일 URL을 받지 못했습니다.");
+      throw new Error("泥⑤? ?뚯씪 URL??諛쏆? 紐삵뻽?듬땲??");
     }
 
     return {
@@ -948,7 +1137,7 @@ async function uploadAttachmentFile(file, token) {
 
   const binaryErrorMessage = await readErrorMessage(
     binaryResponse,
-    "첨부 파일 업로드에 실패했습니다.",
+    "泥⑤? ?뚯씪 ?낅줈?쒖뿉 ?ㅽ뙣?덉뒿?덈떎.",
   );
 
   const canFallbackWithBase64 = Number(file?.size || 0) <= 2.8 * 1024 * 1024;
@@ -978,7 +1167,7 @@ async function uploadAttachmentFile(file, token) {
   const payload = await response.json();
   const url = String(payload?.url || "").trim();
   if (!url) {
-    throw new Error("첨부 파일 URL을 받지 못했습니다.");
+    throw new Error("泥⑤? ?뚯씪 URL??諛쏆? 紐삵뻽?듬땲??");
   }
 
   return {
@@ -1022,12 +1211,12 @@ async function initBoardWritePage() {
     }
 
     if (!attachmentState.url) {
-      attachmentMeta.textContent = "첨부 파일 없음";
+      attachmentMeta.textContent = "泥⑤? ?뚯씪 ?놁쓬";
       attachmentClear.hidden = true;
       return;
     }
 
-    attachmentMeta.textContent = `첨부됨: ${attachmentState.name}`;
+    attachmentMeta.textContent = `泥⑤??? ${attachmentState.name}`;
     attachmentClear.hidden = false;
   }
 
@@ -1079,29 +1268,29 @@ async function initBoardWritePage() {
       const token = readAdminToken();
       if (!token || !(await verifyAdminSessionToken(token))) {
         clearAdminToken();
-        setStatus("관리자 로그인 후 첨부할 수 있습니다.", "error");
+        setStatus("愿由ъ옄 濡쒓렇????泥⑤??????덉뒿?덈떎.", "error");
         clearAttachment();
         await syncWriteAccess();
         return;
       }
 
       if (Number(file.size || 0) > MAX_UPLOAD_BYTES) {
-        setStatus("첨부 파일은 약 4.3MB 이하만 업로드할 수 있습니다.", "error");
+        setStatus("泥⑤? ?뚯씪? ??4.3MB ?댄븯留??낅줈?쒗븷 ???덉뒿?덈떎.", "error");
         clearAttachment();
         return;
       }
 
       try {
-        setStatus("첨부 파일 업로드 중입니다...");
+        setStatus("泥⑤? ?뚯씪 ?낅줈??以묒엯?덈떎...");
         const uploaded = await uploadAttachmentFile(file, token);
         attachmentState.url = uploaded.url;
         attachmentState.name = uploaded.name;
         syncAttachmentUi();
-        setStatus("첨부 파일 업로드가 완료되었습니다.", "ok");
+        setStatus("泥⑤? ?뚯씪 ?낅줈?쒓? ?꾨즺?섏뿀?듬땲??", "ok");
       } catch (error) {
         console.error(error);
         clearAttachment();
-        setStatus(String(error?.message || "첨부 파일 업로드에 실패했습니다."), "error");
+        setStatus(String(error?.message || "泥⑤? ?뚯씪 ?낅줈?쒖뿉 ?ㅽ뙣?덉뒿?덈떎."), "error");
       }
     });
   }
@@ -1112,7 +1301,7 @@ async function initBoardWritePage() {
     const token = readAdminToken();
     if (!token || !(await verifyAdminSessionToken(token))) {
       clearAdminToken();
-      setStatus("관리자 로그인 후 이용해 주세요.", "error");
+      setStatus("愿由ъ옄 濡쒓렇?????댁슜??二쇱꽭??", "error");
       await syncWriteAccess();
       return;
     }
@@ -1123,12 +1312,12 @@ async function initBoardWritePage() {
     const content = String(formData.get("content") || "").trim();
 
     if (!title || !content) {
-      setStatus("제목과 내용은 필수 입력입니다.", "error");
+      setStatus("?쒕ぉ怨??댁슜? ?꾩닔 ?낅젰?낅땲??", "error");
       return;
     }
 
     try {
-      setStatus("공지사항 등록 중입니다...");
+      setStatus("怨듭??ы빆 ?깅줉 以묒엯?덈떎...");
       const response = await fetch("/api/board-posts", {
         method: "POST",
         headers: {
@@ -1145,7 +1334,7 @@ async function initBoardWritePage() {
       });
 
       if (!response.ok) {
-        const errorMessage = await readErrorMessage(response, "공지사항 등록에 실패했습니다.");
+        const errorMessage = await readErrorMessage(response, "怨듭??ы빆 ?깅줉???ㅽ뙣?덉뒿?덈떎.");
         if (response.status === 401 || response.status === 403) {
           clearAdminToken();
           await syncWriteAccess();
@@ -1155,13 +1344,13 @@ async function initBoardWritePage() {
 
       form.reset();
       clearAttachment();
-      setStatus("공지사항이 등록되었습니다.", "ok");
+      setStatus("怨듭??ы빆???깅줉?섏뿀?듬땲??", "ok");
       window.setTimeout(() => {
         window.location.href = "notice.html";
       }, 600);
     } catch (error) {
       console.error(error);
-      setStatus(String(error?.message || "공지사항 등록에 실패했습니다."), "error");
+      setStatus(String(error?.message || "怨듭??ы빆 ?깅줉???ㅽ뙣?덉뒿?덈떎."), "error");
     }
   });
 
@@ -1188,20 +1377,15 @@ function createBoardPreviewItem(post) {
   title.className = "board-post-title board-post-title-link";
   const postId = String(post?.id ?? "").trim();
   title.href = postId ? `notice.html?post=${encodeURIComponent(postId)}` : "notice.html";
-  title.textContent = String(post?.title || "(제목 없음)");
+  title.textContent = String(post?.title || "(?쒕ぉ ?놁쓬)");
 
   const date = document.createElement("span");
   date.className = "board-post-date";
   date.textContent = formatBoardDate(post?.created_at);
 
-  const content = document.createElement("p");
-  content.className = "board-post-content";
-  content.textContent = String(post?.content || "");
-
   top.appendChild(title);
   top.appendChild(date);
   item.appendChild(top);
-  item.appendChild(content);
 
   return item;
 }
@@ -1238,12 +1422,12 @@ async function initBoardPreview() {
   }
 
   try {
-    setStatus("최근 공지를 불러오는 중입니다...");
+    setStatus("理쒓렐 怨듭?瑜?遺덈윭?ㅻ뒗 以묒엯?덈떎...");
     const response = await fetch("/api/board-posts?limit=3", { method: "GET" });
     if (!response.ok) {
       const message = await readErrorMessage(
         response,
-        `최근 공지 불러오기 실패 (${response.status})`,
+        `理쒓렐 怨듭? 遺덈윭?ㅺ린 ?ㅽ뙣 (${response.status})`,
       );
       throw new Error(message);
     }
@@ -1252,7 +1436,7 @@ async function initBoardPreview() {
     postList.innerHTML = "";
 
     if (!Array.isArray(posts) || !posts.length) {
-      renderEmpty("등록된 공지사항이 없습니다.");
+      renderEmpty("?깅줉??怨듭??ы빆???놁뒿?덈떎.");
       setStatus("최근 공지 0건", "ok");
       return;
     }
@@ -1263,9 +1447,10 @@ async function initBoardPreview() {
     setStatus(`최근 공지 ${posts.length}건`, "ok");
   } catch (error) {
     console.error(error);
-    renderEmpty("공지사항을 불러오지 못했습니다.");
-    setStatus(`불러오기 실패: ${String(error?.message || "알 수 없는 오류")}`, "error");
+    renderEmpty("怨듭??ы빆??遺덈윭?ㅼ? 紐삵뻽?듬땲??");
+    setStatus(`遺덈윭?ㅺ린 ?ㅽ뙣: ${String(error?.message || "?????녿뒗 ?ㅻ쪟")}`, "error");
   }
 }
 
 initBoardPreview();
+

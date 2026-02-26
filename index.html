@@ -101,18 +101,24 @@
         <article class="home-vessel-card reveal-item" data-home-vessel-slider>
           <div class="panel-head">
             <p class="eyebrow">FISHING VESSEL</p>
-            <h2>어선 갤러리</h2>
-            <p class="panel-copy">생산 제품의 각 톤급 1번 사진 기준</p>
+            <h2>선박 갤러리</h2>
+            <p class="panel-copy">생산 제품 탭에 등록된 사진 연동</p>
+          </div>
+          <div class="home-gallery-tabs" role="tablist" aria-label="선박 갤러리 탭">
+            <button type="button" class="home-gallery-tab is-active" data-home-gallery-tab="fishing" role="tab" aria-selected="true">낚시선</button>
+            <button type="button" class="home-gallery-tab" data-home-gallery-tab="vessel" role="tab" aria-selected="false">어선</button>
+            <button type="button" class="home-gallery-tab" data-home-gallery-tab="utility" role="tab" aria-selected="false">기타선박</button>
           </div>
           <div class="home-vessel-figure">
             <img data-home-vessel-image src="" alt="어선 대표 이미지">
           </div>
+          <p class="home-gallery-empty" data-home-gallery-empty hidden>해당 탭에 등록된 사진이 없습니다.</p>
           <div class="home-vessel-meta">
-            <p class="home-vessel-title" data-home-vessel-title>어선 4.99톤급</p>
-            <p class="home-vessel-tonnage" data-home-vessel-tonnage>톤급: 4.99톤급</p>
+            <p class="home-vessel-title" data-home-vessel-title>낚시선 갤러리</p>
+            <p class="home-vessel-tonnage" data-home-vessel-tonnage>생산 제품 사진</p>
           </div>
           <div class="home-vessel-controls" aria-label="어선 이미지 슬라이드 선택">
-            <div class="home-vessel-dots" data-home-vessel-dots role="tablist" aria-label="어선 갤러리 항목"></div>
+            <div class="home-vessel-dots" data-home-vessel-dots role="tablist" aria-label="선박 갤러리 항목"></div>
           </div>
         </article>
       </div>
