@@ -1561,6 +1561,220 @@ body.lightbox-open {
   justify-self: start;
 }
 
+.board-write-toggle {
+  margin-bottom: 0.74rem;
+}
+
+.admin-login-form {
+  margin-bottom: 0.4rem;
+}
+
+.admin-session {
+  margin-top: 0.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.admin-session .board-status {
+  margin: 0;
+}
+
+.board-divider {
+  margin: 0.9rem 0 0.85rem;
+  border-top: 1px dashed rgba(var(--theme-accent-rgb), 0.26);
+}
+
+.board-form.is-disabled {
+  opacity: 0.65;
+}
+
+.board-form.is-disabled input,
+.board-form.is-disabled textarea,
+.board-form.is-disabled button {
+  pointer-events: none;
+}
+
+body.admin-modal-open {
+  overflow: hidden;
+}
+
+.footer-admin-trigger {
+  margin-left: 0.34rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: rgba(220, 235, 255, 0.46);
+  font-size: 0.84rem;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.footer-admin-trigger:hover {
+  color: rgba(232, 245, 255, 0.74);
+  text-decoration: underline;
+}
+
+.admin-login-modal,
+.admin-editor-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 2200;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+
+.admin-login-backdrop,
+.admin-editor-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(5, 15, 33, 0.68);
+  backdrop-filter: blur(2px);
+}
+
+.admin-login-panel,
+.admin-editor-panel {
+  position: relative;
+  width: min(760px, 96vw);
+  max-height: min(88vh, 860px);
+  overflow: auto;
+  border-radius: 1rem;
+  border: 1px solid rgba(var(--theme-accent-rgb), 0.2);
+  background: linear-gradient(168deg, rgba(255, 255, 255, 0.985), rgba(240, 248, 255, 0.965));
+  box-shadow: 0 20px 38px rgba(8, 23, 47, 0.3);
+  padding: 1rem;
+}
+
+.admin-login-panel h2,
+.admin-editor-panel h2 {
+  margin: 0.3rem 0 0.22rem;
+  color: var(--navy);
+  font-size: 1.34rem;
+}
+
+.admin-login-copy {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 0.88rem;
+}
+
+.admin-login-close,
+.admin-editor-close {
+  position: absolute;
+  top: 0.45rem;
+  right: 0.45rem;
+  width: 1.95rem;
+  height: 1.95rem;
+  border-radius: 999px;
+  border: 1px solid rgba(var(--theme-accent-rgb), 0.2);
+  background: #fbfdff;
+  color: #1a467f;
+  font-size: 1.22rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.admin-login-session {
+  margin-top: 0.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.admin-login-session .board-status {
+  margin: 0;
+}
+
+.admin-edit-btn {
+  min-height: 2.26rem;
+  padding: 0 0.86rem;
+  font-size: 0.82rem;
+  margin-left: 0.38rem;
+}
+
+.admin-editor-body {
+  margin-top: 0.82rem;
+  display: grid;
+  gap: 0.78rem;
+}
+
+.admin-edit-card {
+  border-radius: 0.78rem;
+  border: 1px solid rgba(var(--theme-accent-rgb), 0.18);
+  background: rgba(255, 255, 255, 0.92);
+  padding: 0.76rem;
+}
+
+.admin-edit-card h3 {
+  margin: 0 0 0.62rem;
+  color: var(--navy);
+  font-size: 1rem;
+}
+
+.admin-field-row {
+  display: grid;
+  gap: 0.3rem;
+  margin-bottom: 0.54rem;
+}
+
+.admin-field-label {
+  color: var(--ink-soft);
+  font-size: 0.79rem;
+  font-weight: 700;
+}
+
+.admin-field-input,
+.admin-field-textarea,
+.admin-field-select {
+  width: 100%;
+  border-radius: 0.64rem;
+  border: 1px solid rgba(var(--theme-accent-rgb), 0.24);
+  background: #fbfdff;
+  color: var(--ink);
+  padding: 0.52rem 0.58rem;
+  font-size: 0.87rem;
+  font-family: "Noto Sans KR", sans-serif;
+}
+
+.admin-field-textarea {
+  resize: vertical;
+}
+
+.admin-dynamic-list {
+  display: grid;
+  gap: 0.64rem;
+}
+
+.admin-dynamic-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.45rem;
+}
+
+.admin-inline-add-btn,
+.admin-inline-delete-btn {
+  min-height: 2.1rem;
+  padding: 0 0.74rem;
+  font-size: 0.8rem;
+}
+
+.admin-row-actions {
+  margin-top: 0.38rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.admin-editor-actions {
+  margin-top: 0.82rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.52rem;
+}
+
 .org-chart {
   margin-top: 1.55rem;
   padding: 1.2rem 1rem 1rem;
@@ -2173,6 +2387,26 @@ body.lightbox-open {
 
   .board-post-content {
     font-size: 0.84rem;
+  }
+
+  .admin-session {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .admin-login-panel,
+  .admin-editor-panel {
+    width: min(98vw, 760px);
+    max-height: 92vh;
+    padding: 0.86rem;
+  }
+
+  .admin-dynamic-row {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-editor-actions {
+    justify-content: flex-start;
   }
 
   .notice-preview-head {

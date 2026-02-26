@@ -1,3 +1,11 @@
+const {
+  buildAuthConfig,
+  getBearerToken,
+  parseJsonBody,
+  readErrorPayload,
+  verifyAdminAccessToken,
+} = require("./_admin-auth");
+
 const TABLE_NAME = "board_posts";
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 50;
@@ -18,22 +26,6 @@ function pickLimit(req) {
   }
 
   return Math.min(MAX_LIMIT, Math.max(1, parsed));
-}
-
-function parseJsonBody(body) {
-  if (body && typeof body === "object") {
-    return body;
-  }
-
-  if (typeof body === "string" && body.trim()) {
-    try {
-      return JSON.parse(body);
-    } catch (_) {
-      return null;
-    }
-  }
-
-  return null;
 }
 
 function sanitizePostPayload(payload) {
@@ -79,54 +71,27 @@ function sanitizePostPayload(payload) {
   };
 }
 
-function buildSupabaseConfig() {
-  const supabaseUrl = String(process.env.SUPABASE_URL || "").trim();
-  const serviceRoleKey = String(process.env.SUPABASE_SERVICE_ROLE_KEY || "").trim();
-
-  if (!supabaseUrl || !serviceRoleKey) {
-    return null;
-  }
-
-  return {
-    endpointBase: `${supabaseUrl.replace(/\/$/, "")}/rest/v1/${TABLE_NAME}`,
-    headers: {
-      apikey: serviceRoleKey,
-      Authorization: `Bearer ${serviceRoleKey}`,
-      "Content-Type": "application/json",
-    },
-  };
-}
-
-async function readErrorPayload(response) {
-  try {
-    const json = await response.json();
-    if (json && typeof json.message === "string") {
-      return json.message;
-    }
-    return JSON.stringify(json);
-  } catch (_) {
-    try {
-      return await response.text();
-    } catch (_) {
-      return "UNKNOWN_ERROR";
-    }
-  }
-}
-
 module.exports = async function handler(req, res) {
   if (req.method !== "GET" && req.method !== "POST") {
     res.setHeader("Allow", "GET, POST");
     return res.status(405).json({ message: "Method Not Allowed" });
   }
 
-  const supabaseConfig = buildSupabaseConfig();
-  if (!supabaseConfig) {
+  const configResult = buildAuthConfig({
+    requireAdminEmails: req.method === "POST",
+  });
+  if (!configResult.ok) {
     return res.status(500).json({
-      message: "SUPABASE_URL 또는 SUPABASE_SERVICE_ROLE_KEY 환경변수가 설정되지 않았습니다.",
+      message: configResult.message,
     });
   }
 
-  const { endpointBase, headers } = supabaseConfig;
+  const endpointBase = `${configResult.supabaseUrl}/rest/v1/${TABLE_NAME}`;
+  const serviceHeaders = {
+    apikey: configResult.serviceRoleKey,
+    Authorization: `Bearer ${configResult.serviceRoleKey}`,
+    "Content-Type": "application/json",
+  };
 
   if (req.method === "GET") {
     const limit = pickLimit(req);
@@ -135,13 +100,13 @@ module.exports = async function handler(req, res) {
     try {
       const response = await fetch(`${endpointBase}${query}`, {
         method: "GET",
-        headers,
+        headers: serviceHeaders,
       });
 
       if (!response.ok) {
         const detail = await readErrorPayload(response);
         return res.status(502).json({
-          message: "Supabase 공지 조회에 실패했습니다.",
+          message: "공지 조회에 실패했습니다.",
           detail,
         });
       }
@@ -149,11 +114,19 @@ module.exports = async function handler(req, res) {
       const posts = await response.json();
       res.setHeader("Cache-Control", "no-store");
       return res.status(200).json(Array.isArray(posts) ? posts : []);
-    } catch (error) {
+    } catch (_) {
       return res.status(502).json({
         message: "공지 조회 중 서버 오류가 발생했습니다.",
       });
     }
+  }
+
+  const accessToken = getBearerToken(req);
+  const authResult = await verifyAdminAccessToken(configResult, accessToken);
+  if (!authResult.ok) {
+    return res.status(authResult.status || 401).json({
+      message: authResult.message,
+    });
   }
 
   const body = parseJsonBody(req.body);
@@ -174,7 +147,7 @@ module.exports = async function handler(req, res) {
     const response = await fetch(endpointBase, {
       method: "POST",
       headers: {
-        ...headers,
+        ...serviceHeaders,
         Prefer: "return=representation",
       },
       body: JSON.stringify(sanitized.payload),
@@ -183,7 +156,7 @@ module.exports = async function handler(req, res) {
     if (!response.ok) {
       const detail = await readErrorPayload(response);
       return res.status(502).json({
-        message: "Supabase 공지 등록에 실패했습니다.",
+        message: "공지 등록에 실패했습니다.",
         detail,
       });
     }
@@ -191,7 +164,7 @@ module.exports = async function handler(req, res) {
     const inserted = await response.json();
     const row = Array.isArray(inserted) ? inserted[0] : inserted;
     return res.status(201).json(row || {});
-  } catch (error) {
+  } catch (_) {
     return res.status(502).json({
       message: "공지 등록 중 서버 오류가 발생했습니다.",
     });

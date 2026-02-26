@@ -11,6 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="styles.css">
   <script src="script.js" defer></script>
+  <script src="admin-cms.js" defer></script>
 </head>
 <body>
   <header class="site-header">
@@ -65,7 +66,9 @@
             <h3>공지 등록</h3>
             <p class="board-help">운영 담당자만 등록해 주세요.</p>
           </div>
-          <form id="board-form" class="board-form">
+          <button id="board-write-toggle" class="btn btn-primary board-write-toggle" type="button" hidden>글쓰기</button>
+
+          <form id="board-form" class="board-form" hidden>
             <label for="board-author">작성자</label>
             <input id="board-author" name="author" type="text" maxlength="30" placeholder="작성자명">
 
@@ -122,3 +125,4 @@
   </footer>
 </body>
 </html>
+

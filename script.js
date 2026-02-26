@@ -1,4 +1,4 @@
-﻿const heroProducts = [
+const heroProducts = [
   {
     title: "FRP 선박 건조 및 수리",
     description: "FRP 선박 건조 및 수리 작업을 현장 맞춤형으로 안정적으로 수행합니다.",
@@ -234,60 +234,89 @@ function initProductImageLightbox() {
     return;
   }
 
-  const lightbox = document.createElement("div");
-  lightbox.className = "image-lightbox";
-  lightbox.setAttribute("aria-hidden", "true");
-  lightbox.innerHTML = `
-    <div class="image-lightbox-backdrop" data-close-lightbox="true"></div>
-    <figure class="image-lightbox-figure" role="dialog" aria-modal="true" aria-label="확대 이미지 보기">
-      <button type="button" class="image-lightbox-close" data-close-lightbox="true" aria-label="확대 이미지 닫기">&times;</button>
-      <img src="" alt="">
-      <figcaption></figcaption>
-    </figure>
-  `;
-
-  document.body.appendChild(lightbox);
-
-  const lightboxImage = lightbox.querySelector("img");
-  const lightboxCaption = lightbox.querySelector("figcaption");
-  let lastFocusedElement = null;
-
-  function closeLightbox() {
-    lightbox.classList.remove("is-open");
+  if (!window.__kmsLightboxState) {
+    const lightbox = document.createElement("div");
+    lightbox.className = "image-lightbox";
     lightbox.setAttribute("aria-hidden", "true");
-    document.body.classList.remove("lightbox-open");
+    lightbox.innerHTML = `
+      <div class="image-lightbox-backdrop" data-close-lightbox="true"></div>
+      <figure class="image-lightbox-figure" role="dialog" aria-modal="true" aria-label="확대 이미지 보기">
+        <button type="button" class="image-lightbox-close" data-close-lightbox="true" aria-label="확대 이미지 닫기">&times;</button>
+        <img src="" alt="">
+        <figcaption></figcaption>
+      </figure>
+    `;
 
-    if (lastFocusedElement instanceof HTMLElement) {
-      lastFocusedElement.focus();
+    document.body.appendChild(lightbox);
+
+    const lightboxImage = lightbox.querySelector("img");
+    const lightboxCaption = lightbox.querySelector("figcaption");
+    let lastFocusedElement = null;
+
+    function closeLightbox() {
+      lightbox.classList.remove("is-open");
+      lightbox.setAttribute("aria-hidden", "true");
+      document.body.classList.remove("lightbox-open");
+
+      if (lastFocusedElement instanceof HTMLElement) {
+        lastFocusedElement.focus();
+      }
     }
+
+    function openLightbox(image) {
+      const src = image.getAttribute("src");
+      const alt = image.getAttribute("alt") || "제품 사진";
+
+      if (!src) {
+        return;
+      }
+
+      lastFocusedElement = document.activeElement;
+      lightboxImage.src = src;
+      lightboxImage.alt = alt;
+      lightboxCaption.textContent = alt;
+
+      lightbox.classList.add("is-open");
+      lightbox.setAttribute("aria-hidden", "false");
+      document.body.classList.add("lightbox-open");
+    }
+
+    lightbox.addEventListener("click", (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) {
+        return;
+      }
+
+      if (target.dataset.closeLightbox === "true") {
+        closeLightbox();
+      }
+    });
+
+    window.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && lightbox.classList.contains("is-open")) {
+        closeLightbox();
+      }
+    });
+
+    window.__kmsLightboxState = {
+      openLightbox,
+    };
   }
 
-  function openLightbox(image) {
-    const src = image.getAttribute("src");
-    const alt = image.getAttribute("alt") || "제품 사진";
+  const lightboxState = window.__kmsLightboxState;
 
-    if (!src) {
+  productImages.forEach((image) => {
+    if (image.dataset.lightboxBound === "true") {
       return;
     }
 
-    lastFocusedElement = document.activeElement;
-    lightboxImage.src = src;
-    lightboxImage.alt = alt;
-    lightboxCaption.textContent = alt;
-
-    lightbox.classList.add("is-open");
-    lightbox.setAttribute("aria-hidden", "false");
-    document.body.classList.add("lightbox-open");
-  }
-
-  productImages.forEach((image) => {
     const alt = image.getAttribute("alt") || "제품 사진";
     image.setAttribute("tabindex", "0");
     image.setAttribute("role", "button");
     image.setAttribute("aria-label", `${alt} 크게 보기`);
 
     image.addEventListener("click", () => {
-      openLightbox(image);
+      lightboxState.openLightbox(image);
     });
 
     image.addEventListener("keydown", (event) => {
@@ -296,25 +325,10 @@ function initProductImageLightbox() {
       }
 
       event.preventDefault();
-      openLightbox(image);
+      lightboxState.openLightbox(image);
     });
-  });
 
-  lightbox.addEventListener("click", (event) => {
-    const target = event.target;
-    if (!(target instanceof HTMLElement)) {
-      return;
-    }
-
-    if (target.dataset.closeLightbox === "true") {
-      closeLightbox();
-    }
-  });
-
-  window.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && lightbox.classList.contains("is-open")) {
-      closeLightbox();
-    }
+    image.dataset.lightboxBound = "true";
   });
 }
 
@@ -384,6 +398,16 @@ async function initBoard() {
     return;
   }
   const endpointBase = "/api/board-posts";
+  const adminLoginEndpoint = "/api/admin-login";
+  const adminSessionEndpoint = "/api/admin-session";
+  const ADMIN_TOKEN_STORAGE_KEY = "kms_admin_access_token";
+
+  const adminLoginForm = root.querySelector("#admin-login-form");
+  const adminSessionBox = root.querySelector("#admin-session");
+  const adminSessionText = root.querySelector("#admin-session-text");
+  const adminLogoutBtn = root.querySelector("#admin-logout-btn");
+  const adminStatus = root.querySelector("#admin-auth-status");
+  let adminAccessToken = "";
 
   function setStatus(message, mode = "normal") {
     status.textContent = message;
@@ -396,12 +420,106 @@ async function initBoard() {
     }
   }
 
+  function setAdminStatus(message, mode = "normal") {
+    if (!adminStatus) {
+      return;
+    }
+
+    adminStatus.textContent = message;
+    adminStatus.classList.remove("is-error", "is-ok");
+    if (mode === "error") {
+      adminStatus.classList.add("is-error");
+    }
+    if (mode === "ok") {
+      adminStatus.classList.add("is-ok");
+    }
+  }
+
   function renderEmpty(message) {
     postList.innerHTML = "";
     const empty = document.createElement("li");
     empty.className = "board-empty";
     empty.textContent = message;
     postList.appendChild(empty);
+  }
+
+  function setBoardFormEnabled(enabled) {
+    form.classList.toggle("is-disabled", !enabled);
+    form.querySelectorAll("input, textarea, button").forEach((field) => {
+      field.disabled = !enabled;
+    });
+  }
+
+  function setAdminSessionUi(email) {
+    const isLoggedIn = Boolean(email);
+
+    if (adminSessionBox) {
+      adminSessionBox.hidden = !isLoggedIn;
+    }
+    if (adminSessionText) {
+      adminSessionText.textContent = isLoggedIn ? `${email} 로그인 상태` : "";
+    }
+    if (adminLoginForm) {
+      adminLoginForm.hidden = isLoggedIn;
+    }
+
+    setBoardFormEnabled(isLoggedIn);
+  }
+
+  function saveAdminToken(token) {
+    try {
+      if (!token) {
+        window.sessionStorage.removeItem(ADMIN_TOKEN_STORAGE_KEY);
+        return;
+      }
+      window.sessionStorage.setItem(ADMIN_TOKEN_STORAGE_KEY, token);
+    } catch (_) {
+      // Ignore storage access errors.
+    }
+  }
+
+  function readAdminToken() {
+    try {
+      return String(window.sessionStorage.getItem(ADMIN_TOKEN_STORAGE_KEY) || "").trim();
+    } catch (_) {
+      return "";
+    }
+  }
+
+  async function readErrorMessage(response, fallbackMessage) {
+    try {
+      const payload = await response.json();
+      if (typeof payload?.message === "string" && payload.message.trim()) {
+        return payload.message;
+      }
+    } catch (_) {
+      // Ignore parse errors.
+    }
+
+    return fallbackMessage;
+  }
+
+  async function verifyAdminSession(token) {
+    const response = await fetch(adminSessionEndpoint, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const errorMessage = await readErrorMessage(response, "세션 확인에 실패했습니다.");
+      throw new Error(errorMessage);
+    }
+
+    const payload = await response.json();
+    const email = String(payload?.email || "").trim();
+
+    if (!email) {
+      throw new Error("유효한 관리자 계정이 아닙니다.");
+    }
+
+    return { email };
   }
 
   async function loadPosts() {
@@ -436,8 +554,76 @@ async function initBoard() {
     }
   }
 
+  setAdminSessionUi("");
+  setAdminStatus("관리자 로그인 후 공지 등록이 가능합니다.");
+
+  if (adminLogoutBtn) {
+    adminLogoutBtn.addEventListener("click", () => {
+      adminAccessToken = "";
+      saveAdminToken("");
+      setAdminSessionUi("");
+      setAdminStatus("로그아웃되었습니다.");
+    });
+  }
+
+  if (adminLoginForm) {
+    adminLoginForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      const formData = new FormData(adminLoginForm);
+      const email = String(formData.get("email") || "").trim();
+      const password = String(formData.get("password") || "").trim();
+
+      if (!email || !password) {
+        setAdminStatus("이메일과 비밀번호를 입력해 주세요.", "error");
+        return;
+      }
+
+      try {
+        setAdminStatus("관리자 로그인 중...");
+        const response = await fetch(adminLoginEndpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email, password }),
+        });
+
+        if (!response.ok) {
+          const errorMessage = await readErrorMessage(response, "관리자 로그인에 실패했습니다.");
+          throw new Error(errorMessage);
+        }
+
+        const payload = await response.json();
+        const accessToken = String(payload?.accessToken || "").trim();
+        const adminEmail = String(payload?.email || email).trim();
+
+        if (!accessToken) {
+          throw new Error("로그인 토큰이 발급되지 않았습니다.");
+        }
+
+        adminAccessToken = accessToken;
+        saveAdminToken(accessToken);
+        setAdminSessionUi(adminEmail);
+        setAdminStatus("관리자 로그인 완료", "ok");
+        adminLoginForm.reset();
+      } catch (error) {
+        console.error(error);
+        adminAccessToken = "";
+        saveAdminToken("");
+        setAdminSessionUi("");
+        setAdminStatus(String(error?.message || "관리자 로그인에 실패했습니다."), "error");
+      }
+    });
+  }
+
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
+
+    if (!adminAccessToken) {
+      setAdminStatus("관리자 로그인 후 등록할 수 있습니다.", "error");
+      return;
+    }
 
     const formData = new FormData(form);
     const author = String(formData.get("author") || "").trim();
@@ -461,12 +647,22 @@ async function initBoard() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${adminAccessToken}`,
         },
         body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
-        throw new Error(`SAVE_FAILED_${response.status}`);
+        const errorMessage = await readErrorMessage(response, "공지 등록에 실패했습니다.");
+
+        if (response.status === 401 || response.status === 403) {
+          adminAccessToken = "";
+          saveAdminToken("");
+          setAdminSessionUi("");
+          setAdminStatus(errorMessage, "error");
+        }
+
+        throw new Error(errorMessage);
       }
 
       form.reset();
@@ -479,6 +675,25 @@ async function initBoard() {
   });
 
   await loadPosts();
+
+  const savedToken = readAdminToken();
+  if (!savedToken) {
+    return;
+  }
+
+  try {
+    setAdminStatus("관리자 세션 확인 중...");
+    const session = await verifyAdminSession(savedToken);
+    adminAccessToken = savedToken;
+    setAdminSessionUi(session.email);
+    setAdminStatus(`${session.email} 로그인 상태`, "ok");
+  } catch (error) {
+    console.error(error);
+    adminAccessToken = "";
+    saveAdminToken("");
+    setAdminSessionUi("");
+    setAdminStatus("세션이 만료되었습니다. 다시 로그인해 주세요.", "error");
+  }
 }
 
 initBoard();
