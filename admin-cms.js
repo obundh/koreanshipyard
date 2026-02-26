@@ -147,11 +147,19 @@
   async function readErrorMessage(response, fallbackMessage) {
     try {
       const payload = await response.json();
+      const detail =
+        typeof payload?.detail === "string" && payload.detail.trim()
+          ? payload.detail.trim()
+          : "";
       if (typeof payload?.message === "string" && payload.message.trim()) {
-        return payload.message;
+        const message = payload.message.trim();
+        if (detail && /실패/.test(message)) {
+          return `${message} (${detail})`;
+        }
+        return message;
       }
-      if (typeof payload?.detail === "string" && payload.detail.trim()) {
-        return payload.detail;
+      if (detail) {
+        return detail;
       }
     } catch (_) {
       // Ignore parse errors.

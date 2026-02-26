@@ -22,13 +22,25 @@ async function ensureBucketExists(supabaseUrl, serviceRoleKey, bucketName) {
     };
   }
 
+  const safeBucketName = encodeURIComponent(String(bucketName || "").trim());
+  const commonHeaders = {
+    apikey: serviceRoleKey,
+    Authorization: `Bearer ${serviceRoleKey}`,
+    "Content-Type": "application/json",
+  };
+
+  const readResponse = await fetch(`${supabaseUrl}/storage/v1/bucket/${safeBucketName}`, {
+    method: "GET",
+    headers: commonHeaders,
+  });
+
+  if (readResponse.ok) {
+    return { ok: true };
+  }
+
   const response = await fetch(`${supabaseUrl}/storage/v1/bucket`, {
     method: "POST",
-    headers: {
-      apikey: serviceRoleKey,
-      Authorization: `Bearer ${serviceRoleKey}`,
-      "Content-Type": "application/json",
-    },
+    headers: commonHeaders,
     body: JSON.stringify({
       id: bucketName,
       name: bucketName,
@@ -41,6 +53,10 @@ async function ensureBucketExists(supabaseUrl, serviceRoleKey, bucketName) {
   }
 
   const detail = await readErrorPayload(response);
+  if (/already exists|resource already exists|duplicate/i.test(String(detail || ""))) {
+    return { ok: true };
+  }
+
   return {
     ok: false,
     message: "스토리지 버킷 생성에 실패했습니다.",
