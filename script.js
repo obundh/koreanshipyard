@@ -3,7 +3,7 @@
     title: "낚시선 생산 라인",
     description: "3톤부터 9.77톤급까지 현장 요구에 맞춘 낚시선을 안정적으로 제작합니다.",
     meta: "톤급: 3톤 ~ 9.77톤급",
-    image: "shipphoto/낚시선_5.5t-6.67t_1.jpg",
+    image: "shipphoto/낚시선_5.5t-6.67t_2.jpg",
   },
   {
     title: "어선 생산 라인",
@@ -43,7 +43,7 @@ function renderHero(index) {
   activeHeroIndex = safeIndex;
 
   heroStage.style.backgroundImage =
-    `linear-gradient(120deg, rgba(8, 24, 54, 0.44), rgba(20, 53, 108, 0.24) 45%, rgba(11, 33, 70, 0.46)), url("${product.image}")`;
+    `linear-gradient(120deg, rgba(8, 24, 54, 0.28), rgba(20, 53, 108, 0.12) 45%, rgba(11, 33, 70, 0.3)), url("${product.image}")`;
 
   heroTitle.textContent = product.title;
   heroDesc.textContent = product.description;

@@ -160,7 +160,7 @@ a {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(120deg, rgba(8, 24, 54, 0.44), rgba(20, 53, 108, 0.24) 45%, rgba(11, 33, 70, 0.46)),
+    linear-gradient(120deg, rgba(8, 24, 54, 0.28), rgba(20, 53, 108, 0.12) 45%, rgba(11, 33, 70, 0.3)),
     url("sample-image-1.png") center / cover no-repeat;
   z-index: -2;
   transition: background-image 0.65s ease;
@@ -171,7 +171,7 @@ a {
   inset: 0;
   z-index: -1;
   background:
-    linear-gradient(to top, rgba(9, 26, 57, 0.56) 8%, rgba(9, 26, 57, 0.2) 48%, rgba(9, 26, 57, 0.44)),
+    linear-gradient(to top, rgba(9, 26, 57, 0.34) 8%, rgba(9, 26, 57, 0.08) 48%, rgba(9, 26, 57, 0.24)),
     repeating-linear-gradient(
       to right,
       rgba(255, 255, 255, 0.02) 0,
