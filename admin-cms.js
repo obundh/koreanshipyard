@@ -8,7 +8,8 @@
   const ADMIN_SESSION_ENDPOINT = "/api/admin-session";
   const SITE_CONTENT_ENDPOINT = "/api/site-content";
   const UPLOAD_ASSET_ENDPOINT = "/api/upload-asset";
-  const MAX_ASSET_BYTES = 4 * 1024 * 1024;
+  const PUBLIC_CONFIG_ENDPOINT = "/api/public-config";
+  const MAX_ASSET_BYTES = 50 * 1024 * 1024;
 
   const adminState = {
     token: "",
@@ -24,6 +25,7 @@
   const adminControlledElements = new Set();
   let loginModalRefs = null;
   let editorModalRefs = null;
+  let publicUploadConfigPromise = null;
 
   function safeSessionStorageGet(key) {
     try {
@@ -67,6 +69,37 @@
 
   function cloneValue(value) {
     return JSON.parse(JSON.stringify(value));
+  }
+
+  function sanitizePathSegment(value) {
+    return String(value || "")
+      .trim()
+      .replace(/[^a-zA-Z0-9._-]/g, "-")
+      .replace(/-+/g, "-")
+      .replace(/^-+|-+$/g, "");
+  }
+
+  function splitFileName(fileName) {
+    const raw = String(fileName || "").trim();
+    const lastDotIndex = raw.lastIndexOf(".");
+    if (lastDotIndex <= 0 || lastDotIndex === raw.length - 1) {
+      return {
+        base: raw || "asset",
+        ext: "bin",
+      };
+    }
+
+    return {
+      base: raw.slice(0, lastDotIndex),
+      ext: raw.slice(lastDotIndex + 1),
+    };
+  }
+
+  function encodeObjectPath(path) {
+    return String(path || "")
+      .split("/")
+      .map((segment) => encodeURIComponent(segment))
+      .join("/");
   }
 
   function updateAdminElementVisibility() {
@@ -546,9 +579,92 @@
     });
   }
 
-  async function uploadAssetFile(file, folder) {
+  async function getPublicUploadConfig() {
+    if (!publicUploadConfigPromise) {
+      publicUploadConfigPromise = fetch(PUBLIC_CONFIG_ENDPOINT, {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+        },
+      })
+        .then(async (response) => {
+          if (!response.ok) {
+            const message = await readErrorMessage(response, "공개 업로드 설정을 불러오지 못했습니다.");
+            throw new Error(message);
+          }
+          return response.json();
+        })
+        .then((payload) => {
+          const supabaseUrl = String(payload?.supabaseUrl || "").trim().replace(/\/$/, "");
+          const supabaseAnonKey = String(payload?.supabaseAnonKey || "").trim();
+          const storageBucket = String(payload?.storageBucket || "site-assets").trim();
+
+          if (!supabaseUrl || !supabaseAnonKey || !storageBucket) {
+            throw new Error("업로드 설정이 올바르지 않습니다.");
+          }
+
+          return {
+            supabaseUrl,
+            supabaseAnonKey,
+            storageBucket,
+          };
+        })
+        .catch((error) => {
+          publicUploadConfigPromise = null;
+          throw error;
+        });
+    }
+
+    return publicUploadConfigPromise;
+  }
+
+  function buildAssetObjectPath(fileName, folder) {
+    const safeFolder = sanitizePathSegment(folder || "cms-assets") || "cms-assets";
+    const { base, ext } = splitFileName(fileName);
+    const safeBase = sanitizePathSegment(base) || "asset";
+    const safeExt = sanitizePathSegment(ext) || "bin";
+    const stamp = Date.now();
+    const random = Math.random().toString(36).slice(2, 9);
+    return `${safeFolder}/${stamp}-${random}-${safeBase}.${safeExt}`;
+  }
+
+  async function uploadAssetDirectToStorage(file, folder) {
     if (!isAdminLoggedIn()) {
       throw new Error("관리자 로그인 후 업로드할 수 있습니다.");
+    }
+
+    const config = await getPublicUploadConfig();
+    const objectPath = buildAssetObjectPath(file?.name, folder);
+    const encodedPath = encodeObjectPath(objectPath);
+    const uploadUrl = `${config.supabaseUrl}/storage/v1/object/${config.storageBucket}/${encodedPath}`;
+
+    const response = await fetch(uploadUrl, {
+      method: "POST",
+      headers: {
+        apikey: config.supabaseAnonKey,
+        Authorization: `Bearer ${getAdminToken()}`,
+        "Content-Type": String(file?.type || "application/octet-stream"),
+        "x-upsert": "true",
+      },
+      body: file,
+    });
+
+    if (!response.ok) {
+      const message = await readErrorMessage(response, "스토리지 직접 업로드에 실패했습니다.");
+      throw new Error(message);
+    }
+
+    return `${config.supabaseUrl}/storage/v1/object/public/${config.storageBucket}/${encodedPath}`;
+  }
+
+  async function uploadAssetFile(file, folder) {
+    try {
+      return await uploadAssetDirectToStorage(file, folder);
+    } catch (directError) {
+      const canFallbackWithApi = Number(file?.size || 0) <= 2.8 * 1024 * 1024;
+      if (!canFallbackWithApi) {
+        throw directError;
+      }
     }
 
     const dataUrl = await readFileAsDataUrl(file);
@@ -585,7 +701,7 @@
       mimePrefix = "",
       folder = "cms-assets",
       clearLabel = "파일 제거",
-      helpText = "파일 선택 시 즉시 적용됩니다. (4MB 이하)",
+      helpText = "파일 선택 시 즉시 적용됩니다. (50MB 이하)",
       typeName = "파일",
       previewType = "none",
     } = options;
@@ -678,7 +794,7 @@
       }
 
       if (Number(file.size || 0) > MAX_ASSET_BYTES) {
-        setHelp("파일 용량은 4MB 이하만 업로드할 수 있습니다.", "error");
+        setHelp("파일 용량은 50MB 이하만 업로드할 수 있습니다.", "error");
         return;
       }
 
@@ -718,7 +834,7 @@
       mimePrefix: "image/",
       folder: "cms-images",
       clearLabel: "이미지 제거",
-      helpText: "파일 선택 시 즉시 적용됩니다. (4MB 이하)",
+      helpText: "파일 선택 시 즉시 적용됩니다. (50MB 이하)",
       typeName: "이미지",
       previewType: "image",
     });
@@ -730,7 +846,7 @@
       mimePrefix: "video/",
       folder: "cms-videos",
       clearLabel: "영상 제거",
-      helpText: "파일 선택 시 즉시 적용됩니다. (4MB 이하)",
+      helpText: "파일 선택 시 즉시 적용됩니다. (50MB 이하)",
       typeName: "영상",
       previewType: "video",
     });

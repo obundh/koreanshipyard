@@ -34,7 +34,10 @@ const heroProducts = [
 ];
 
 const ADMIN_TOKEN_STORAGE_KEY = "kms_admin_access_token";
+const PUBLIC_CONFIG_ENDPOINT = "/api/public-config";
+const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
 const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+let publicUploadConfigPromise = null;
 
 const heroStage = document.querySelector(".hero-stage");
 const heroTitle = document.querySelector("#hero-title");
@@ -583,7 +586,125 @@ function readFileAsDataUrl(file) {
   });
 }
 
+function sanitizePathSegment(value) {
+  return String(value || "")
+    .trim()
+    .replace(/[^a-zA-Z0-9._-]/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function splitFileName(fileName) {
+  const raw = String(fileName || "").trim();
+  const lastDotIndex = raw.lastIndexOf(".");
+  if (lastDotIndex <= 0 || lastDotIndex === raw.length - 1) {
+    return {
+      base: raw || "attachment",
+      ext: "bin",
+    };
+  }
+
+  return {
+    base: raw.slice(0, lastDotIndex),
+    ext: raw.slice(lastDotIndex + 1),
+  };
+}
+
+function encodeObjectPath(path) {
+  return String(path || "")
+    .split("/")
+    .map((segment) => encodeURIComponent(segment))
+    .join("/");
+}
+
+async function getPublicUploadConfig() {
+  if (!publicUploadConfigPromise) {
+    publicUploadConfigPromise = fetch(PUBLIC_CONFIG_ENDPOINT, {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+      },
+    })
+      .then(async (response) => {
+        if (!response.ok) {
+          const message = await readErrorMessage(response, "공개 업로드 설정을 불러오지 못했습니다.");
+          throw new Error(message);
+        }
+        return response.json();
+      })
+      .then((payload) => {
+        const supabaseUrl = String(payload?.supabaseUrl || "").trim().replace(/\/$/, "");
+        const supabaseAnonKey = String(payload?.supabaseAnonKey || "").trim();
+        const storageBucket = String(payload?.storageBucket || "site-assets").trim();
+
+        if (!supabaseUrl || !supabaseAnonKey || !storageBucket) {
+          throw new Error("업로드 설정이 올바르지 않습니다.");
+        }
+
+        return {
+          supabaseUrl,
+          supabaseAnonKey,
+          storageBucket,
+        };
+      })
+      .catch((error) => {
+        publicUploadConfigPromise = null;
+        throw error;
+      });
+  }
+
+  return publicUploadConfigPromise;
+}
+
+function buildAttachmentObjectPath(fileName, folder) {
+  const safeFolder = sanitizePathSegment(folder || "board-attachments") || "board-attachments";
+  const { base, ext } = splitFileName(fileName);
+  const safeBase = sanitizePathSegment(base) || "attachment";
+  const safeExt = sanitizePathSegment(ext) || "bin";
+  const stamp = Date.now();
+  const random = Math.random().toString(36).slice(2, 9);
+  return `${safeFolder}/${stamp}-${random}-${safeBase}.${safeExt}`;
+}
+
+async function uploadAttachmentDirectToStorage(file, token, folder) {
+  const config = await getPublicUploadConfig();
+  const objectPath = buildAttachmentObjectPath(file?.name, folder);
+  const encodedPath = encodeObjectPath(objectPath);
+  const uploadUrl = `${config.supabaseUrl}/storage/v1/object/${config.storageBucket}/${encodedPath}`;
+
+  const response = await fetch(uploadUrl, {
+    method: "POST",
+    headers: {
+      apikey: config.supabaseAnonKey,
+      Authorization: `Bearer ${token}`,
+      "Content-Type": String(file?.type || "application/octet-stream"),
+      "x-upsert": "true",
+    },
+    body: file,
+  });
+
+  if (!response.ok) {
+    const message = await readErrorMessage(response, "스토리지 직접 업로드에 실패했습니다.");
+    throw new Error(message);
+  }
+
+  return `${config.supabaseUrl}/storage/v1/object/public/${config.storageBucket}/${encodedPath}`;
+}
+
 async function uploadAttachmentFile(file, token) {
+  try {
+    const directUrl = await uploadAttachmentDirectToStorage(file, token, "board-attachments");
+    return {
+      url: directUrl,
+      name: file.name,
+    };
+  } catch (directError) {
+    const canFallbackWithApi = Number(file?.size || 0) <= 2.8 * 1024 * 1024;
+    if (!canFallbackWithApi) {
+      throw directError;
+    }
+  }
+
   const dataUrl = await readFileAsDataUrl(file);
   const response = await fetch("/api/upload-asset", {
     method: "POST",
@@ -697,8 +818,8 @@ async function initBoardWritePage() {
         return;
       }
 
-      if (Number(file.size || 0) > 4 * 1024 * 1024) {
-        setStatus("첨부 파일은 4MB 이하만 업로드할 수 있습니다.", "error");
+      if (Number(file.size || 0) > MAX_UPLOAD_BYTES) {
+        setStatus("첨부 파일은 50MB 이하만 업로드할 수 있습니다.", "error");
         clearAttachment();
         return;
       }

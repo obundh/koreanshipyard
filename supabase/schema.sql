@@ -51,3 +51,36 @@ on conflict (id) do nothing;
 insert into storage.buckets (id, name, public)
 values ('site-assets', 'site-assets', true)
 on conflict (id) do nothing;
+
+-- Policies for direct browser upload (admin account signed in via Supabase Auth)
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_policies
+    where schemaname = 'storage'
+      and tablename = 'objects'
+      and policyname = 'Authenticated can upload site-assets'
+  ) then
+    create policy "Authenticated can upload site-assets"
+      on storage.objects
+      for insert
+      to authenticated
+      with check (bucket_id = 'site-assets');
+  end if;
+
+  if not exists (
+    select 1
+    from pg_policies
+    where schemaname = 'storage'
+      and tablename = 'objects'
+      and policyname = 'Authenticated can update site-assets'
+  ) then
+    create policy "Authenticated can update site-assets"
+      on storage.objects
+      for update
+      to authenticated
+      using (bucket_id = 'site-assets')
+      with check (bucket_id = 'site-assets');
+  end if;
+end $$;
