@@ -392,22 +392,10 @@ async function initBoard() {
 
   const postList = root.querySelector("#board-post-list");
   const status = root.querySelector("#board-status");
-  const form = root.querySelector("#board-form");
 
-  if (!postList || !status || !form) {
+  if (!postList || !status) {
     return;
   }
-  const endpointBase = "/api/board-posts";
-  const adminLoginEndpoint = "/api/admin-login";
-  const adminSessionEndpoint = "/api/admin-session";
-  const ADMIN_TOKEN_STORAGE_KEY = "kms_admin_access_token";
-
-  const adminLoginForm = root.querySelector("#admin-login-form");
-  const adminSessionBox = root.querySelector("#admin-session");
-  const adminSessionText = root.querySelector("#admin-session-text");
-  const adminLogoutBtn = root.querySelector("#admin-logout-btn");
-  const adminStatus = root.querySelector("#admin-auth-status");
-  let adminAccessToken = "";
 
   function setStatus(message, mode = "normal") {
     status.textContent = message;
@@ -420,21 +408,6 @@ async function initBoard() {
     }
   }
 
-  function setAdminStatus(message, mode = "normal") {
-    if (!adminStatus) {
-      return;
-    }
-
-    adminStatus.textContent = message;
-    adminStatus.classList.remove("is-error", "is-ok");
-    if (mode === "error") {
-      adminStatus.classList.add("is-error");
-    }
-    if (mode === "ok") {
-      adminStatus.classList.add("is-ok");
-    }
-  }
-
   function renderEmpty(message) {
     postList.innerHTML = "";
     const empty = document.createElement("li");
@@ -443,185 +416,107 @@ async function initBoard() {
     postList.appendChild(empty);
   }
 
-  function setBoardFormEnabled(enabled) {
-    form.classList.toggle("is-disabled", !enabled);
-    form.querySelectorAll("input, textarea, button").forEach((field) => {
-      field.disabled = !enabled;
-    });
-  }
-
-  function setAdminSessionUi(email) {
-    const isLoggedIn = Boolean(email);
-
-    if (adminSessionBox) {
-      adminSessionBox.hidden = !isLoggedIn;
-    }
-    if (adminSessionText) {
-      adminSessionText.textContent = isLoggedIn ? `${email} 로그인 상태` : "";
-    }
-    if (adminLoginForm) {
-      adminLoginForm.hidden = isLoggedIn;
-    }
-
-    setBoardFormEnabled(isLoggedIn);
-  }
-
-  function saveAdminToken(token) {
-    try {
-      if (!token) {
-        window.sessionStorage.removeItem(ADMIN_TOKEN_STORAGE_KEY);
-        return;
-      }
-      window.sessionStorage.setItem(ADMIN_TOKEN_STORAGE_KEY, token);
-    } catch (_) {
-      // Ignore storage access errors.
-    }
-  }
-
-  function readAdminToken() {
-    try {
-      return String(window.sessionStorage.getItem(ADMIN_TOKEN_STORAGE_KEY) || "").trim();
-    } catch (_) {
-      return "";
-    }
-  }
-
-  async function readErrorMessage(response, fallbackMessage) {
-    try {
-      const payload = await response.json();
-      if (typeof payload?.message === "string" && payload.message.trim()) {
-        return payload.message;
-      }
-    } catch (_) {
-      // Ignore parse errors.
-    }
-
-    return fallbackMessage;
-  }
-
-  async function verifyAdminSession(token) {
-    const response = await fetch(adminSessionEndpoint, {
+  try {
+    setStatus("공지사항을 불러오는 중입니다...");
+    const response = await fetch("/api/board-posts?limit=20", {
       method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
     });
 
     if (!response.ok) {
-      const errorMessage = await readErrorMessage(response, "세션 확인에 실패했습니다.");
-      throw new Error(errorMessage);
+      throw new Error(`LOAD_FAILED_${response.status}`);
     }
 
+    const posts = await response.json();
+    postList.innerHTML = "";
+
+    if (!Array.isArray(posts) || !posts.length) {
+      renderEmpty("등록된 공지사항이 없습니다.");
+      setStatus("공지사항 0건", "ok");
+      return;
+    }
+
+    posts.forEach((post) => {
+      postList.appendChild(createBoardItem(post));
+    });
+
+    setStatus(`공지사항 ${posts.length}건`, "ok");
+  } catch (error) {
+    console.error(error);
+    renderEmpty("공지사항을 불러오지 못했습니다.");
+    setStatus("불러오기 실패: 서버 API(/api/board-posts) 설정을 확인해 주세요.", "error");
+  }
+}
+
+initBoard();
+
+function readAdminToken() {
+  try {
+    return String(window.sessionStorage.getItem("kms_admin_access_token") || "").trim();
+  } catch (_) {
+    return "";
+  }
+}
+
+function clearAdminToken() {
+  try {
+    window.sessionStorage.removeItem("kms_admin_access_token");
+  } catch (_) {
+    // Ignore storage access errors.
+  }
+}
+
+async function readErrorMessage(response, fallbackMessage) {
+  try {
     const payload = await response.json();
-    const email = String(payload?.email || "").trim();
-
-    if (!email) {
-      throw new Error("유효한 관리자 계정이 아닙니다.");
+    if (typeof payload?.message === "string" && payload.message.trim()) {
+      return payload.message;
     }
-
-    return { email };
+  } catch (_) {
+    // Ignore parse errors.
   }
 
-  async function loadPosts() {
-    try {
-      setStatus("게시글을 불러오는 중입니다...");
-      const response = await fetch(`${endpointBase}?limit=20`, {
-        method: "GET",
-      });
+  return fallbackMessage;
+}
 
-      if (!response.ok) {
-        throw new Error(`LOAD_FAILED_${response.status}`);
-      }
+async function initBoardWritePage() {
+  const root = document.querySelector("[data-board-write-root]");
+  if (!root) {
+    return;
+  }
 
-      const posts = await response.json();
-      postList.innerHTML = "";
+  const form = root.querySelector("#board-write-form");
+  const authGuide = root.querySelector("#board-write-auth");
+  const status = root.querySelector("#board-write-status");
 
-      if (!Array.isArray(posts) || !posts.length) {
-        renderEmpty("등록된 게시글이 없습니다.");
-        setStatus("게시글 0건", "ok");
-        return;
-      }
+  if (!form || !authGuide || !status) {
+    return;
+  }
 
-      posts.forEach((post) => {
-        postList.appendChild(createBoardItem(post));
-      });
-
-      setStatus(`게시글 ${posts.length}건`, "ok");
-    } catch (error) {
-      console.error(error);
-      renderEmpty("게시글을 불러오지 못했습니다.");
-      setStatus("불러오기 실패: 서버 API(/api/board-posts) 설정을 확인해 주세요.", "error");
+  function setStatus(message, mode = "normal") {
+    status.textContent = message;
+    status.classList.remove("is-error", "is-ok");
+    if (mode === "error") {
+      status.classList.add("is-error");
+    }
+    if (mode === "ok") {
+      status.classList.add("is-ok");
     }
   }
 
-  setAdminSessionUi("");
-  setAdminStatus("관리자 로그인 후 공지 등록이 가능합니다.");
-
-  if (adminLogoutBtn) {
-    adminLogoutBtn.addEventListener("click", () => {
-      adminAccessToken = "";
-      saveAdminToken("");
-      setAdminSessionUi("");
-      setAdminStatus("로그아웃되었습니다.");
-    });
-  }
-
-  if (adminLoginForm) {
-    adminLoginForm.addEventListener("submit", async (event) => {
-      event.preventDefault();
-
-      const formData = new FormData(adminLoginForm);
-      const email = String(formData.get("email") || "").trim();
-      const password = String(formData.get("password") || "").trim();
-
-      if (!email || !password) {
-        setAdminStatus("이메일과 비밀번호를 입력해 주세요.", "error");
-        return;
-      }
-
-      try {
-        setAdminStatus("관리자 로그인 중...");
-        const response = await fetch(adminLoginEndpoint, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ email, password }),
-        });
-
-        if (!response.ok) {
-          const errorMessage = await readErrorMessage(response, "관리자 로그인에 실패했습니다.");
-          throw new Error(errorMessage);
-        }
-
-        const payload = await response.json();
-        const accessToken = String(payload?.accessToken || "").trim();
-        const adminEmail = String(payload?.email || email).trim();
-
-        if (!accessToken) {
-          throw new Error("로그인 토큰이 발급되지 않았습니다.");
-        }
-
-        adminAccessToken = accessToken;
-        saveAdminToken(accessToken);
-        setAdminSessionUi(adminEmail);
-        setAdminStatus("관리자 로그인 완료", "ok");
-        adminLoginForm.reset();
-      } catch (error) {
-        console.error(error);
-        adminAccessToken = "";
-        saveAdminToken("");
-        setAdminSessionUi("");
-        setAdminStatus(String(error?.message || "관리자 로그인에 실패했습니다."), "error");
-      }
-    });
+  function syncWriteAccess() {
+    const hasToken = Boolean(readAdminToken());
+    authGuide.hidden = hasToken;
+    form.hidden = !hasToken;
+    form.classList.toggle("is-disabled", !hasToken);
   }
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
 
+    const adminAccessToken = readAdminToken();
     if (!adminAccessToken) {
-      setAdminStatus("관리자 로그인 후 등록할 수 있습니다.", "error");
+      setStatus("관리자 로그인 후 이용해 주세요.", "error");
+      syncWriteAccess();
       return;
     }
 
@@ -631,73 +526,51 @@ async function initBoard() {
     const content = String(formData.get("content") || "").trim();
 
     if (!title || !content) {
-      setStatus("제목/내용은 필수 입력입니다.", "error");
+      setStatus("제목과 내용은 필수 입력입니다.", "error");
       return;
     }
 
     try {
-      setStatus("게시글 저장 중...");
-      const payload = {
-        author,
-        title,
-        content,
-      };
-
-      const response = await fetch(endpointBase, {
+      setStatus("공지사항 등록 중입니다...");
+      const response = await fetch("/api/board-posts", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${adminAccessToken}`,
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          author,
+          title,
+          content,
+        }),
       });
 
       if (!response.ok) {
-        const errorMessage = await readErrorMessage(response, "공지 등록에 실패했습니다.");
-
+        const errorMessage = await readErrorMessage(response, "공지사항 등록에 실패했습니다.");
         if (response.status === 401 || response.status === 403) {
-          adminAccessToken = "";
-          saveAdminToken("");
-          setAdminSessionUi("");
-          setAdminStatus(errorMessage, "error");
+          clearAdminToken();
+          syncWriteAccess();
         }
-
         throw new Error(errorMessage);
       }
 
       form.reset();
-      setStatus("게시글이 등록되었습니다.", "ok");
-      await loadPosts();
+      setStatus("공지사항이 등록되었습니다.", "ok");
+      window.setTimeout(() => {
+        window.location.href = "notice.html";
+      }, 600);
     } catch (error) {
       console.error(error);
-      setStatus("등록 실패: 서버 API(/api/board-posts) 설정을 확인해 주세요.", "error");
+      setStatus(String(error?.message || "공지사항 등록에 실패했습니다."), "error");
     }
   });
 
-  await loadPosts();
-
-  const savedToken = readAdminToken();
-  if (!savedToken) {
-    return;
-  }
-
-  try {
-    setAdminStatus("관리자 세션 확인 중...");
-    const session = await verifyAdminSession(savedToken);
-    adminAccessToken = savedToken;
-    setAdminSessionUi(session.email);
-    setAdminStatus(`${session.email} 로그인 상태`, "ok");
-  } catch (error) {
-    console.error(error);
-    adminAccessToken = "";
-    saveAdminToken("");
-    setAdminSessionUi("");
-    setAdminStatus("세션이 만료되었습니다. 다시 로그인해 주세요.", "error");
-  }
+  window.addEventListener("kms-admin-auth-change", syncWriteAccess);
+  window.addEventListener("focus", syncWriteAccess);
+  syncWriteAccess();
 }
 
-initBoard();
-
+initBoardWritePage();
 function createBoardPreviewItem(post) {
   const item = document.createElement("li");
   item.className = "board-post-item";

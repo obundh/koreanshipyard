@@ -38,3 +38,8 @@ execute procedure public.touch_site_content_updated_at();
 insert into public.site_content (id, content)
 values ('global', '{}'::jsonb)
 on conflict (id) do nothing;
+
+-- Public storage bucket for CMS image uploads
+insert into storage.buckets (id, name, public)
+values ('site-assets', 'site-assets', true)
+on conflict (id) do nothing;

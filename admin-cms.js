@@ -7,6 +7,7 @@
   const ADMIN_LOGIN_ENDPOINT = "/api/admin-login";
   const ADMIN_SESSION_ENDPOINT = "/api/admin-session";
   const SITE_CONTENT_ENDPOINT = "/api/site-content";
+  const UPLOAD_ASSET_ENDPOINT = "/api/upload-asset";
 
   const adminState = {
     token: "",
@@ -511,6 +512,144 @@
     return textarea;
   }
 
+  function readFileAsDataUrl(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ""));
+      reader.onerror = () => reject(new Error("FILE_READ_FAILED"));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function uploadImageAsset(file) {
+    if (!isAdminLoggedIn()) {
+      throw new Error("관리자 로그인 후 업로드할 수 있습니다.");
+    }
+
+    const dataUrl = await readFileAsDataUrl(file);
+    const response = await fetch(UPLOAD_ASSET_ENDPOINT, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${getAdminToken()}`,
+      },
+      body: JSON.stringify({
+        fileName: file.name,
+        dataUrl,
+        folder: "cms-images",
+      }),
+    });
+
+    if (!response.ok) {
+      const message = await readErrorMessage(response, "이미지 업로드에 실패했습니다.");
+      throw new Error(message);
+    }
+
+    const payload = await response.json();
+    const url = String(payload?.url || "").trim();
+    if (!url) {
+      throw new Error("업로드 URL을 받지 못했습니다.");
+    }
+
+    return url;
+  }
+
+  function createImagePickerField(targetInput) {
+    const wrapper = document.createElement("div");
+    wrapper.className = "admin-image-picker";
+
+    const controls = document.createElement("div");
+    controls.className = "admin-image-picker-controls";
+
+    const fileInput = document.createElement("input");
+    fileInput.type = "file";
+    fileInput.accept = "image/*";
+    fileInput.className = "admin-file-input";
+
+    const clearButton = document.createElement("button");
+    clearButton.type = "button";
+    clearButton.className = "btn btn-ghost admin-inline-delete-btn";
+    clearButton.textContent = "이미지 제거";
+
+    controls.appendChild(fileInput);
+    controls.appendChild(clearButton);
+
+    const help = document.createElement("p");
+    help.className = "admin-image-picker-help";
+    help.textContent = "파일 선택 시 즉시 적용됩니다. (2MB 이하)";
+
+    const preview = document.createElement("img");
+    preview.className = "admin-image-picker-preview";
+    preview.alt = "선택 이미지 미리보기";
+
+    function setHelp(message, mode = "normal") {
+      help.textContent = message;
+      help.classList.remove("is-error", "is-ok");
+      if (mode === "error") {
+        help.classList.add("is-error");
+      }
+      if (mode === "ok") {
+        help.classList.add("is-ok");
+      }
+    }
+
+    function syncPreviewByValue() {
+      const value = String(targetInput.value || "").trim();
+      if (!value) {
+        preview.hidden = true;
+        preview.removeAttribute("src");
+        return;
+      }
+
+      preview.src = value;
+      preview.hidden = false;
+    }
+
+    fileInput.addEventListener("change", async () => {
+      const file = fileInput.files?.[0];
+      if (!file) {
+        return;
+      }
+
+      if (!String(file.type || "").startsWith("image/")) {
+        setHelp("이미지 파일만 선택할 수 있습니다.", "error");
+        return;
+      }
+
+      if (Number(file.size || 0) > 2 * 1024 * 1024) {
+        setHelp("파일 용량은 2MB 이하만 업로드할 수 있습니다.", "error");
+        return;
+      }
+
+      try {
+        setHelp("업로드 중입니다...");
+        const uploadedUrl = await uploadImageAsset(file);
+        targetInput.value = uploadedUrl;
+        syncPreviewByValue();
+        setHelp(`업로드 완료: ${file.name}`, "ok");
+      } catch (error) {
+        setHelp(String(error?.message || "업로드 중 오류가 발생했습니다."), "error");
+      }
+    });
+
+    clearButton.addEventListener("click", () => {
+      targetInput.value = "";
+      fileInput.value = "";
+      syncPreviewByValue();
+      setHelp("이미지를 제거했습니다.", "ok");
+    });
+
+    targetInput.addEventListener("input", () => {
+      syncPreviewByValue();
+    });
+
+    syncPreviewByValue();
+    wrapper.appendChild(controls);
+    wrapper.appendChild(help);
+    wrapper.appendChild(preview);
+    return wrapper;
+  }
+
   async function loadSiteContent() {
     try {
       const response = await fetch(SITE_CONTENT_ENDPOINT, {
@@ -823,6 +962,7 @@
             card.appendChild(createEditorRow("설명", descInput));
             card.appendChild(createEditorRow("메타", metaInput));
             card.appendChild(createEditorRow("이미지", imageInput));
+            card.appendChild(createEditorRow("이미지 파일", createImagePickerField(imageInput)));
             card.appendChild(createEditorRow("위치", positionInput));
             body.appendChild(card);
 
@@ -1019,6 +1159,7 @@
 
             row.appendChild(createEditorRow("배치 그룹", containerSelect));
             row.appendChild(createEditorRow("이미지", imageInput));
+            row.appendChild(createEditorRow("이미지 파일", createImagePickerField(imageInput)));
             row.appendChild(createEditorRow("제목", titleInput));
             row.appendChild(createEditorRow("설명", descInput));
             row.appendChild(createEditorRow("대체 텍스트", altInput));
@@ -1091,50 +1232,28 @@
     });
   }
 
-  function initNoticeWriteToggle() {
-    const root = document.querySelector("[data-board-root]");
-    const writeToggle = document.querySelector("#board-write-toggle");
-    const form = document.querySelector("#board-form");
-    if (!root || !writeToggle || !form) {
+  function initNoticeAdminControls() {
+    const writeLink = document.querySelector("#board-write-link");
+    if (writeLink) {
+      registerAdminControlledElement(writeLink);
+    }
+
+    const writeRoot = document.querySelector("[data-board-write-root]");
+    if (!writeRoot) {
       return;
     }
 
-    function closeForm() {
-      form.hidden = true;
-      writeToggle.textContent = "글쓰기";
-      writeToggle.dataset.opened = "false";
-    }
-
-    function openForm() {
-      form.hidden = false;
-      writeToggle.textContent = "글쓰기 닫기";
-      writeToggle.dataset.opened = "true";
+    const authGuide = writeRoot.querySelector("#board-write-auth");
+    const form = writeRoot.querySelector("#board-write-form");
+    if (!authGuide || !form) {
+      return;
     }
 
     function syncWriteUi() {
       const visible = adminState.loggedIn;
-      writeToggle.hidden = !visible;
-      if (!visible) {
-        closeForm();
-        return;
-      }
-
-      if (writeToggle.dataset.opened === "true") {
-        openForm();
-        return;
-      }
-
-      closeForm();
+      authGuide.hidden = visible;
+      form.hidden = !visible;
     }
-
-    writeToggle.addEventListener("click", () => {
-      const opened = writeToggle.dataset.opened === "true";
-      if (opened) {
-        closeForm();
-      } else {
-        openForm();
-      }
-    });
 
     window.addEventListener(AUTH_EVENT_NAME, syncWriteUi);
     syncWriteUi();
@@ -1151,7 +1270,7 @@
     applyProcessSteps();
     applyProductsContent();
 
-    initNoticeWriteToggle();
+    initNoticeAdminControls();
     initIndexEditor();
     initAboutEditor();
     initProductsEditor();
