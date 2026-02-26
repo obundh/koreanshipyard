@@ -1534,6 +1534,83 @@ body.lightbox-open {
   text-decoration: underline;
 }
 
+.site-footer {
+  margin-top: 0.8rem;
+  padding: 2rem 0 1.2rem;
+  border-top: 1px solid rgba(var(--theme-accent-rgb), 0.22);
+  background:
+    linear-gradient(180deg, rgba(var(--theme-deep-rgb), 0.92), rgba(var(--theme-overlay-rgb), 0.98));
+  color: rgba(235, 244, 255, 0.94);
+}
+
+.footer-inner {
+  width: var(--container);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.footer-inner section {
+  min-width: 0;
+}
+
+.footer-name {
+  margin: 0;
+  font-family: "Barlow Condensed", sans-serif;
+  font-size: 1.42rem;
+  letter-spacing: 0.01em;
+  color: #f3f8ff;
+}
+
+.footer-inner p {
+  margin: 0.28rem 0 0;
+  font-size: 0.88rem;
+  color: rgba(219, 233, 251, 0.95);
+}
+
+.footer-inner strong {
+  margin-right: 0.36rem;
+  color: rgba(239, 248, 255, 0.96);
+}
+
+.footer-inner a {
+  color: rgba(232, 244, 255, 0.98);
+}
+
+.footer-inner a:hover {
+  text-decoration: underline;
+}
+
+.footer-links {
+  margin-top: 0.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.56rem;
+}
+
+.footer-links a {
+  min-height: 1.88rem;
+  padding: 0 0.65rem;
+  border-radius: 999px;
+  border: 1px solid rgba(210, 229, 252, 0.25);
+  background: rgba(255, 255, 255, 0.08);
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.footer-copy {
+  width: var(--container);
+  margin: 1rem auto 0;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(193, 216, 247, 0.18);
+  color: rgba(205, 223, 246, 0.88);
+  font-size: 0.78rem;
+}
+
 .reveal,
 .reveal-item {
   opacity: 0;
@@ -1600,6 +1677,10 @@ body.lightbox-open {
   }
 
   .location-info-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .footer-inner {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -1692,7 +1773,8 @@ body.lightbox-open {
   .link-grid,
   .cap-grid,
   .metric-row,
-  .location-info-grid {
+  .location-info-grid,
+  .footer-inner {
     grid-template-columns: 1fr;
   }
 
@@ -1847,6 +1929,25 @@ body.lightbox-open {
 
   .timeline-item {
     padding-left: 3.3rem;
+  }
+
+  .site-footer {
+    padding: 1.35rem 0 1rem;
+  }
+
+  .footer-links {
+    gap: 0.4rem;
+  }
+
+  .footer-links a {
+    min-height: 1.76rem;
+    font-size: 0.74rem;
+    padding: 0 0.54rem;
+  }
+
+  .footer-copy {
+    margin-top: 0.82rem;
+    font-size: 0.72rem;
   }
 
   .history-panel {
