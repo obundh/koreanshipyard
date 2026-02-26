@@ -9,7 +9,7 @@
   const SITE_CONTENT_ENDPOINT = "/api/site-content";
   const UPLOAD_ASSET_ENDPOINT = "/api/upload-asset";
   const PUBLIC_CONFIG_ENDPOINT = "/api/public-config";
-  const MAX_ASSET_BYTES = 50 * 1024 * 1024;
+  const MAX_ASSET_BYTES = Math.floor(4.3 * 1024 * 1024);
 
   const adminState = {
     token: "",
@@ -666,13 +666,34 @@
   }
 
   async function uploadAssetFile(file, folder) {
-    try {
-      return await uploadAssetDirectToStorage(file, folder);
-    } catch (directError) {
-      const canFallbackWithApi = Number(file?.size || 0) <= 2.8 * 1024 * 1024;
-      if (!canFallbackWithApi) {
-        throw directError;
+    const binaryResponse = await fetch(UPLOAD_ASSET_ENDPOINT, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${getAdminToken()}`,
+        "Content-Type": String(file?.type || "application/octet-stream"),
+        "X-File-Name": encodeURIComponent(String(file?.name || "asset.bin")),
+        "X-Upload-Folder": folder || "cms-assets",
+      },
+      body: file,
+    });
+
+    if (binaryResponse.ok) {
+      const payload = await binaryResponse.json();
+      const url = String(payload?.url || "").trim();
+      if (!url) {
+        throw new Error("업로드 URL을 받지 못했습니다.");
       }
+      return url;
+    }
+
+    const binaryErrorMessage = await readErrorMessage(
+      binaryResponse,
+      "파일 업로드에 실패했습니다.",
+    );
+
+    const canFallbackWithBase64 = Number(file?.size || 0) <= 2.8 * 1024 * 1024;
+    if (!canFallbackWithBase64) {
+      throw new Error(binaryErrorMessage);
     }
 
     const dataUrl = await readFileAsDataUrl(file);
@@ -690,7 +711,7 @@
     });
 
     if (!response.ok) {
-      const message = await readErrorMessage(response, "파일 업로드에 실패했습니다.");
+      const message = await readErrorMessage(response, binaryErrorMessage);
       throw new Error(message);
     }
 
@@ -709,7 +730,7 @@
       mimePrefix = "",
       folder = "cms-assets",
       clearLabel = "파일 제거",
-      helpText = "파일 선택 시 즉시 적용됩니다. (50MB 이하)",
+      helpText = "파일 선택 시 즉시 적용됩니다. (약 4.3MB 이하)",
       typeName = "파일",
       previewType = "none",
     } = options;
@@ -802,7 +823,7 @@
       }
 
       if (Number(file.size || 0) > MAX_ASSET_BYTES) {
-        setHelp("파일 용량은 50MB 이하만 업로드할 수 있습니다.", "error");
+        setHelp("파일 용량은 약 4.3MB 이하만 업로드할 수 있습니다.", "error");
         return;
       }
 
@@ -842,7 +863,7 @@
       mimePrefix: "image/",
       folder: "cms-images",
       clearLabel: "이미지 제거",
-      helpText: "파일 선택 시 즉시 적용됩니다. (50MB 이하)",
+      helpText: "파일 선택 시 즉시 적용됩니다. (약 4.3MB 이하)",
       typeName: "이미지",
       previewType: "image",
     });
@@ -854,7 +875,7 @@
       mimePrefix: "video/",
       folder: "cms-videos",
       clearLabel: "영상 제거",
-      helpText: "파일 선택 시 즉시 적용됩니다. (50MB 이하)",
+      helpText: "파일 선택 시 즉시 적용됩니다. (약 4.3MB 이하)",
       typeName: "영상",
       previewType: "video",
     });

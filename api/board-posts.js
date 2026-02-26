@@ -9,7 +9,8 @@ const {
 const TABLE_NAME = "board_posts";
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 50;
-const ATTACHMENT_COLUMN_MISSING_PATTERN = /(attachment_url|attachment_name).*(does not exist|not exist)|column\s+board_posts\.(attachment_url|attachment_name)\s+does not exist/i;
+const ATTACHMENT_COLUMN_MISSING_PATTERN =
+  /(attachment_url|attachment_name).*(does not exist|not exist|schema cache|could not find)|column\s+board_posts\.(attachment_url|attachment_name)\s+does not exist/i;
 
 function pickStringParam(value) {
   if (Array.isArray(value)) {

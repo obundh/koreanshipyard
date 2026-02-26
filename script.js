@@ -35,7 +35,7 @@ const heroProducts = [
 
 const ADMIN_TOKEN_STORAGE_KEY = "kms_admin_access_token";
 const PUBLIC_CONFIG_ENDPOINT = "/api/public-config";
-const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
+const MAX_UPLOAD_BYTES = Math.floor(4.3 * 1024 * 1024);
 const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 let publicUploadConfigPromise = null;
 
@@ -700,17 +700,38 @@ async function uploadAttachmentDirectToStorage(file, token, folder) {
 }
 
 async function uploadAttachmentFile(file, token) {
-  try {
-    const directUrl = await uploadAttachmentDirectToStorage(file, token, "board-attachments");
+  const binaryResponse = await fetch("/api/upload-asset", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": String(file?.type || "application/octet-stream"),
+      "X-File-Name": encodeURIComponent(String(file?.name || "attachment.bin")),
+      "X-Upload-Folder": "board-attachments",
+    },
+    body: file,
+  });
+
+  if (binaryResponse.ok) {
+    const payload = await binaryResponse.json();
+    const url = String(payload?.url || "").trim();
+    if (!url) {
+      throw new Error("첨부 파일 URL을 받지 못했습니다.");
+    }
+
     return {
-      url: directUrl,
+      url,
       name: file.name,
     };
-  } catch (directError) {
-    const canFallbackWithApi = Number(file?.size || 0) <= 2.8 * 1024 * 1024;
-    if (!canFallbackWithApi) {
-      throw directError;
-    }
+  }
+
+  const binaryErrorMessage = await readErrorMessage(
+    binaryResponse,
+    "첨부 파일 업로드에 실패했습니다.",
+  );
+
+  const canFallbackWithBase64 = Number(file?.size || 0) <= 2.8 * 1024 * 1024;
+  if (!canFallbackWithBase64) {
+    throw new Error(binaryErrorMessage);
   }
 
   const dataUrl = await readFileAsDataUrl(file);
@@ -728,7 +749,7 @@ async function uploadAttachmentFile(file, token) {
   });
 
   if (!response.ok) {
-    const message = await readErrorMessage(response, "첨부 파일 업로드에 실패했습니다.");
+    const message = await readErrorMessage(response, binaryErrorMessage);
     throw new Error(message);
   }
 
@@ -827,7 +848,7 @@ async function initBoardWritePage() {
       }
 
       if (Number(file.size || 0) > MAX_UPLOAD_BYTES) {
-        setStatus("첨부 파일은 50MB 이하만 업로드할 수 있습니다.", "error");
+        setStatus("첨부 파일은 약 4.3MB 이하만 업로드할 수 있습니다.", "error");
         clearAttachment();
         return;
       }

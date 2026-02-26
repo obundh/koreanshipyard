@@ -7,7 +7,7 @@ const {
 } = require("./_admin-auth");
 
 const DEFAULT_BUCKET = "site-assets";
-const MAX_FILE_BYTES = 4 * 1024 * 1024;
+const MAX_FILE_BYTES = Math.floor(4.3 * 1024 * 1024);
 
 const ALLOWED_MIME_PREFIXES = ["image/", "video/"];
 const ALLOWED_EXACT_MIMES = new Set([
@@ -29,6 +29,51 @@ function sanitizeSegment(value) {
     .replace(/[^a-zA-Z0-9/_-]/g, "-")
     .replace(/\/+/g, "/")
     .replace(/^\/+|\/+$/g, "");
+}
+
+function pickHeader(req, key) {
+  const headers = req?.headers || {};
+  const value = headers[key] ?? headers[key.toLowerCase()];
+
+  if (Array.isArray(value)) {
+    return String(value[0] || "").trim();
+  }
+
+  return String(value || "").trim();
+}
+
+async function readRawBody(req) {
+  if (Buffer.isBuffer(req?.body)) {
+    return req.body;
+  }
+
+  if (req?.body instanceof Uint8Array) {
+    return Buffer.from(req.body);
+  }
+
+  if (typeof req?.body === "string") {
+    return Buffer.from(req.body);
+  }
+
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    req.on("data", (chunk) => {
+      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+    });
+    req.on("end", () => {
+      resolve(Buffer.concat(chunks));
+    });
+    req.on("error", reject);
+  });
+}
+
+function extensionFromFileName(fileName) {
+  const raw = String(fileName || "").trim();
+  const match = /\.([a-zA-Z0-9]+)$/.exec(raw);
+  if (!match) {
+    return "bin";
+  }
+  return String(match[1] || "bin").toLowerCase();
 }
 
 function parseDataUrl(dataUrl) {
@@ -107,6 +152,10 @@ async function ensureBucketExists(config, bucketName) {
   }
 
   const detail = await readErrorPayload(response);
+  if (/already exists|resource already exists|duplicate/i.test(String(detail || ""))) {
+    return;
+  }
+
   throw new Error(detail || "버킷 생성 실패");
 }
 
@@ -133,33 +182,73 @@ module.exports = async function handler(req, res) {
     });
   }
 
-  const body = parseJsonBody(req.body);
-  if (!body) {
-    return res.status(400).json({
-      message: "요청 본문(JSON) 형식이 올바르지 않습니다.",
-    });
-  }
+  const contentTypeHeader = pickHeader(req, "content-type").toLowerCase();
+  const contentType = contentTypeHeader.split(";")[0].trim();
+  const isJsonBody = contentType.includes("application/json");
 
-  const parsed = parseDataUrl(body.dataUrl);
-  if (!parsed) {
-    return res.status(400).json({
-      message: "파일 데이터(dataUrl)가 올바르지 않습니다.",
-    });
-  }
-
-  if (!isAllowedMime(parsed.mime)) {
-    return res.status(400).json({
-      message: "지원하지 않는 파일 형식입니다.",
-    });
-  }
-
+  let mime = "";
+  let folder = "cms-assets";
   let binary;
-  try {
-    binary = Buffer.from(parsed.base64, "base64");
-  } catch (_) {
-    return res.status(400).json({
-      message: "파일 데이터 디코딩에 실패했습니다.",
-    });
+  let ext = "bin";
+
+  if (isJsonBody) {
+    const body = parseJsonBody(req.body);
+    if (!body) {
+      return res.status(400).json({
+        message: "요청 본문(JSON) 형식이 올바르지 않습니다.",
+      });
+    }
+
+    const parsed = parseDataUrl(body.dataUrl);
+    if (!parsed) {
+      return res.status(400).json({
+        message: "파일 데이터(dataUrl)가 올바르지 않습니다.",
+      });
+    }
+
+    if (!isAllowedMime(parsed.mime)) {
+      return res.status(400).json({
+        message: "지원하지 않는 파일 형식입니다.",
+      });
+    }
+
+    try {
+      binary = Buffer.from(parsed.base64, "base64");
+    } catch (_) {
+      return res.status(400).json({
+        message: "파일 데이터 디코딩에 실패했습니다.",
+      });
+    }
+
+    mime = parsed.mime;
+    folder = sanitizeSegment(body.folder || "cms-assets") || "cms-assets";
+    ext = extensionFromMime(mime);
+  } else {
+    const fileName = decodeURIComponent(pickHeader(req, "x-file-name") || "asset.bin");
+    const folderHeader = pickHeader(req, "x-upload-folder");
+    folder = sanitizeSegment(folderHeader || "cms-assets") || "cms-assets";
+
+    const binaryMime = String(contentType || "").trim().toLowerCase();
+    if (!binaryMime || binaryMime === "application/octet-stream") {
+      ext = extensionFromFileName(fileName);
+      mime = binaryMime || "application/octet-stream";
+    } else {
+      if (!isAllowedMime(binaryMime)) {
+        return res.status(400).json({
+          message: "지원하지 않는 파일 형식입니다.",
+        });
+      }
+      mime = binaryMime;
+      ext = extensionFromMime(binaryMime);
+    }
+
+    try {
+      binary = await readRawBody(req);
+    } catch (_) {
+      return res.status(400).json({
+        message: "파일 데이터 읽기에 실패했습니다.",
+      });
+    }
   }
 
   if (!binary.length) {
@@ -169,16 +258,14 @@ module.exports = async function handler(req, res) {
   }
 
   if (binary.length > MAX_FILE_BYTES) {
-    return res.status(400).json({
-      message: "파일은 4MB 이하만 업로드할 수 있습니다.",
+    return res.status(413).json({
+      message: "파일은 약 4.3MB 이하만 업로드할 수 있습니다.",
     });
   }
 
   const bucketName =
     sanitizeSegment(process.env.SUPABASE_STORAGE_BUCKET || DEFAULT_BUCKET) ||
     DEFAULT_BUCKET;
-  const folder = sanitizeSegment(body.folder || "cms-assets") || "cms-assets";
-  const ext = extensionFromMime(parsed.mime);
   const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}.${ext}`;
   const objectPath = `${folder}/${filename}`;
   const encodedPath = objectPath
@@ -197,7 +284,7 @@ module.exports = async function handler(req, res) {
       headers: {
         apikey: configResult.serviceRoleKey,
         Authorization: `Bearer ${configResult.serviceRoleKey}`,
-        "Content-Type": parsed.mime,
+        "Content-Type": mime || "application/octet-stream",
         "x-upsert": "true",
       },
       body: binary,
@@ -216,7 +303,7 @@ module.exports = async function handler(req, res) {
       url: publicUrl,
       path: objectPath,
       bucket: bucketName,
-      mime: parsed.mime,
+      mime: mime || "application/octet-stream",
       size: binary.length,
     });
   } catch (_) {
