@@ -1525,7 +1525,50 @@ body.lightbox-open {
   background:
     linear-gradient(160deg, rgba(255, 255, 255, 0.99), rgba(244, 249, 255, 0.97));
   box-shadow: 0 10px 16px rgba(9, 27, 56, 0.11);
-  padding: 0.92rem;
+  padding: 0;
+  overflow: hidden;
+}
+
+.board-post-entry {
+  display: block;
+}
+
+.board-post-summary {
+  list-style: none;
+  cursor: pointer;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.88rem 0.92rem;
+}
+
+.board-post-summary::-webkit-details-marker {
+  display: none;
+}
+
+.board-post-summary::marker {
+  content: "";
+}
+
+.board-post-summary-main {
+  min-width: 0;
+}
+
+.board-post-caret {
+  color: #38597f;
+  font-size: 0.76rem;
+  transition: transform 0.2s ease;
+}
+
+.board-post-entry[open] .board-post-caret {
+  transform: rotate(180deg);
+}
+
+.board-post-detail {
+  border-top: 1px solid rgba(13, 36, 71, 0.15);
+  padding: 0.76rem 0.92rem 0.9rem;
+  background: rgba(250, 253, 255, 0.86);
 }
 
 .board-post-top {

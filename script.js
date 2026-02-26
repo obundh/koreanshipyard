@@ -398,8 +398,14 @@ function createBoardItem(post, options = {}) {
   const item = document.createElement("li");
   item.className = "board-post-item";
 
-  const top = document.createElement("div");
-  top.className = "board-post-top";
+  const entry = document.createElement("details");
+  entry.className = "board-post-entry";
+
+  const summary = document.createElement("summary");
+  summary.className = "board-post-summary";
+
+  const summaryMain = document.createElement("div");
+  summaryMain.className = "board-post-summary-main";
 
   const title = document.createElement("p");
   title.className = "board-post-title";
@@ -411,11 +417,18 @@ function createBoardItem(post, options = {}) {
 
   const meta = document.createElement("p");
   meta.className = "board-post-meta";
-  meta.textContent = post?.author ? `작성자: ${post.author}` : "작성자: 미기재";
+  const authorLabel = post?.author ? `작성자: ${post.author}` : "작성자: 미기재";
+  const createdLabel = formatBoardDate(post?.created_at);
+  meta.textContent = createdLabel
+    ? `${authorLabel} · 작성일: ${createdLabel}`
+    : authorLabel;
 
   const content = document.createElement("p");
   content.className = "board-post-content";
   content.textContent = String(post?.content || "");
+
+  const detail = document.createElement("div");
+  detail.className = "board-post-detail";
 
   const actions = document.createElement("div");
   actions.className = "board-post-actions";
@@ -441,14 +454,25 @@ function createBoardItem(post, options = {}) {
     actions.appendChild(deleteButton);
   }
 
-  top.appendChild(title);
-  top.appendChild(date);
-  item.appendChild(top);
-  item.appendChild(meta);
-  item.appendChild(content);
+  const caret = document.createElement("span");
+  caret.className = "board-post-caret";
+  caret.setAttribute("aria-hidden", "true");
+  caret.textContent = "▾";
+
+  summaryMain.appendChild(title);
+  summary.appendChild(summaryMain);
+  summary.appendChild(date);
+  summary.appendChild(caret);
+
+  detail.appendChild(meta);
+  detail.appendChild(content);
   if (actions.childElementCount) {
-    item.appendChild(actions);
+    detail.appendChild(actions);
   }
+
+  entry.appendChild(summary);
+  entry.appendChild(detail);
+  item.appendChild(entry);
 
   return item;
 }
