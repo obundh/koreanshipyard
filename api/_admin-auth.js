@@ -43,7 +43,9 @@ function parseAdminEmails(raw) {
 function buildAuthConfig({ requireAnonKey = false, requireAdminEmails = false } = {}) {
   const supabaseUrl = String(process.env.SUPABASE_URL || "").trim().replace(/\/$/, "");
   const serviceRoleKey = String(process.env.SUPABASE_SERVICE_ROLE_KEY || "").trim();
-  const anonKey = String(process.env.SUPABASE_ANON_KEY || "").trim();
+  const anonKey = String(
+    process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_PUBLISHABLE_KEY || "",
+  ).trim();
   const adminEmails = parseAdminEmails(process.env.ADMIN_EMAILS);
 
   const missing = [];
@@ -54,7 +56,7 @@ function buildAuthConfig({ requireAnonKey = false, requireAdminEmails = false } 
     missing.push("SUPABASE_SERVICE_ROLE_KEY");
   }
   if (requireAnonKey && !anonKey) {
-    missing.push("SUPABASE_ANON_KEY");
+    missing.push("SUPABASE_ANON_KEY (or SUPABASE_PUBLISHABLE_KEY)");
   }
   if (requireAdminEmails && !adminEmails.size) {
     missing.push("ADMIN_EMAILS");
